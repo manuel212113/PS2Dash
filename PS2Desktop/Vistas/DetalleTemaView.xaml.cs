@@ -8,6 +8,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
+using PS2Desktop.Modelos;
+using PS2Desktop.Services;
+using System.Diagnostics;
 
 namespace PS2Desktop.Vistas
 {
@@ -192,6 +195,92 @@ namespace PS2Desktop.Vistas
             _mediaPlayer?.Stop();
             _mediaPlayer?.Dispose();
             _libVLC?.Dispose();
+        }
+
+        // Aplicar un Theme al detalle
+        public async Task ApplyTheme(Theme theme)
+        {
+            if (theme == null) return;
+
+            this.DataContext = theme;
+
+            // Actualizar fuentes de media si hay video_demo o imagen
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(theme.video_demo))
+                {
+                    _mediaSources[0] = theme.video_demo;
+                }
+                if (!string.IsNullOrWhiteSpace(theme.image_url))
+                {
+                    if (_mediaSources.Count < 3) _mediaSources.Add(theme.image_url);
+                    else _mediaSources[1] = theme.image_url;
+                }
+
+                await CambiarMedia(0);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error ApplyTheme: " + ex.Message);
+            }
+        }
+
+        private void btnDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.DataContext is Theme t && !string.IsNullOrWhiteSpace(t.link_descarga))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo(t.link_descarga) { UseShellExecute = true });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error opening link: " + ex.Message);
+                }
+            }
+        }
+
+        private async void Vote_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(this.DataContext is Theme theme)) return;
+
+            if (AppState.CurrentUser == null)
+            {
+                // Pedir login en ventana modal
+                var win = new Window
+                {
+                    Title = "Iniciar sesión",
+                    Width = 420,
+                    Height = 300,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Owner = Window.GetWindow(this),
+                    Content = new LoginView()
+                };
+                win.ShowDialog();
+                if (AppState.CurrentUser == null)
+                {
+                    MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
+
+            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
+            {
+                try
+                {
+                    bool ok = await AppState.Db.VoteAsync(theme.id, "theme", AppState.CurrentUser.id, val);
+                    if (ok)
+                    {
+                        var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(theme.id, "theme");
+                        txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error voting: " + ex.Message);
+                    MessageBox.Show("No se pudo registrar el voto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
     }
 }
