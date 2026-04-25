@@ -242,16 +242,13 @@ namespace PS2Desktop.Vistas
 
         private async void Vote_Click(object sender, RoutedEventArgs e)
         {
-            if (!(this.DataContext is Theme theme)) return;
-
             if (AppState.CurrentUser == null)
             {
-                // Pedir login en ventana modal
                 var win = new Window
                 {
                     Title = "Iniciar sesión",
-                    Width = 420,
-                    Height = 300,
+                    Width = 820,
+                    Height = 480,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,
                     Owner = Window.GetWindow(this),
                     Content = new LoginView()
@@ -266,12 +263,18 @@ namespace PS2Desktop.Vistas
 
             if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
             {
+                if (!(this.DataContext is Theme theme))
+                {
+                    MessageBox.Show("No hay tema cargado.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
                 try
                 {
                     bool ok = await AppState.Db.VoteAsync(theme.id, "theme", AppState.CurrentUser.id, val);
                     if (ok)
                     {
-                        var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(theme.id, "theme");
+                        (double avg, int cnt) = await AppState.Db.GetAverageRatingAsync(theme.id, "theme");
                         txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
                     }
                 }
