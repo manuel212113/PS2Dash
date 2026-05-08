@@ -3,38 +3,61 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using PS2Desktop.Vistas; // Importante para que reconozca los archivos en esa carpeta
+using PS2Desktop.Vistas;
+using PS2Desktop.Modelos;
 
 namespace PS2Desktop
 {
     public partial class MainWindow : Window
     {
+        private TemaView _currentTemaView;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            // 1. CARGA INICIAL: Cargamos la vista de inicio al abrir la app
+            // 1. CARGA INICIAL: Cargamos la vista de login
+            var loginView = new LoginView();
+            loginView.LoggedIn += (s, e) =>
+            {
+                // Cuando el usuario inicia sesión, cambiamos a la vista principal
+                CargarTemaView();
+            };
+            MainContentFrame.Content = loginView;
         }
 
         // --- MÉTODOS DE NAVEGACIÓN ---
 
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
-            // Cambiamos el contenido al UserControl "Hogar"
-            MainContentFrame.Content = new MainWindow();
+            // Cambiamos el contenido al UserControl "TemaView"
+            CargarTemaView();
             ActualizarEstiloBotones(BtnHome, BtnTemas);
         }
 
         private void BtnTemas_Click(object sender, RoutedEventArgs e)
         {
             // Cambiamos el contenido al UserControl "TemaView"
-            // Al cargar el control
-            TemaView vistaTemas = new TemaView();
-            vistaTemas.IrADetalle += (s, e) => {
-                MainContentFrame.Content = new DetalleTemaView();
-            };
-            MainContentFrame.Content = vistaTemas;
+            CargarTemaView();
             ActualizarEstiloBotones(BtnTemas, BtnHome);
+        }
+
+        /// <summary>
+        /// Carga la vista de temas con el manejador de eventos configurado
+        /// </summary>
+        private void CargarTemaView()
+        {
+            _currentTemaView = new TemaView();
+            _currentTemaView.IrADetalle += (s, tema) =>
+            {
+                if (tema != null)
+                {
+                    var detalleView = new DetalleTemaView();
+                    detalleView.SetTema(tema);
+                    MainContentFrame.Content = detalleView;
+                }
+            };
+            MainContentFrame.Content = _currentTemaView;
         }
 
         // Método para resaltar el botón activo (Estilo Epic Games)

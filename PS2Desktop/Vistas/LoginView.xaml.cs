@@ -81,7 +81,6 @@ namespace PS2Desktop.Vistas
                     AppState.CurrentUser = user;
                     ShowAlert("Registro completado. Has iniciado sesión.", "Éxito");
                     LoggedIn?.Invoke(this, EventArgs.Empty);
-                    Window.GetWindow(this)?.Close();
                 }
                 else
                 {
@@ -128,6 +127,11 @@ namespace PS2Desktop.Vistas
             }
 
             w.ShowDialog();
+        }
+
+        private void BtnForgotPassword_Click(object sender, RoutedEventArgs e)
+        {
+            ShowAlert("Por favor, contacta al administrador para recuperar tu contraseña.", "Recuperación de contraseña");
         }
     }
 }

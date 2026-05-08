@@ -189,13 +189,33 @@ CREATE TABLE IF NOT EXISTS public.votes (
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                List<string> caracteristicas = new List<string>();
+
+                // Manejo seguro de características JSON
+                if (!reader.IsDBNull(4))
+                {
+                    try
+                    {
+                        var caracteristicasJson = reader.GetString(4);
+                        if (!string.IsNullOrWhiteSpace(caracteristicasJson))
+                        {
+                            caracteristicas = JsonSerializer.Deserialize<List<string>>(caracteristicasJson) ?? new List<string>();
+                        }
+                    }
+                    catch
+                    {
+                        // Si falla la deserialización, usa lista vacía
+                        caracteristicas = new List<string>();
+                    }
+                }
+
                 var t = new Theme
                 {
                     id = reader.IsDBNull(0) ? Guid.Empty : reader.GetGuid(0),
                     nombre = reader.IsDBNull(1) ? null : reader.GetString(1),
                     autor = reader.IsDBNull(2) ? null : reader.GetString(2),
                     descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
-                    caracteristicas = reader.IsDBNull(4) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(reader.GetString(4)),
+                    caracteristicas = caracteristicas,
                     video_demo = reader.IsDBNull(5) ? null : reader.GetString(5),
                     link_descarga = reader.IsDBNull(6) ? null : reader.GetString(6),
                     image_url = reader.IsDBNull(7) ? null : reader.GetString(7)

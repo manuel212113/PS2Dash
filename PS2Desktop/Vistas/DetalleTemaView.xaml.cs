@@ -20,6 +20,7 @@ namespace PS2Desktop.Vistas
         private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
         private bool _isDraggingSlider = false;
         private readonly YoutubeClient _youtubeClient = new YoutubeClient();
+        private Theme _temaActual; // Almacenar el tema actual
 
         // Lista para manejar la navegación (Video + Imágenes)
         private List<string> _mediaSources = new List<string>
@@ -62,6 +63,25 @@ namespace PS2Desktop.Vistas
 
             this.Loaded += DetalleTemaView_Loaded;
             this.Unloaded += (s, e) => Dispose();
+        }
+
+        /// <summary>
+        /// Establece el tema a mostrar en la vista de detalle
+        /// </summary>
+        public void SetTema(Theme tema)
+        {
+            _temaActual = tema;
+
+            // Actualizar las fuentes de media con los datos del tema
+            if (!string.IsNullOrEmpty(tema.video_demo))
+            {
+                _mediaSources[0] = tema.video_demo;
+            }
+
+            if (!string.IsNullOrEmpty(tema.image_url))
+            {
+                _mediaSources[1] = tema.image_url;
+            }
         }
 
         private async void DetalleTemaView_Loaded(object sender, RoutedEventArgs e)

@@ -85,7 +85,7 @@
 
                 <Grid Grid.Column="1" Margin="0,60,0,0">
                     <ContentControl x:Name="MainContentFrame">
-                        <vistas:TemaView />
+                        <vistas:LoginView />
                     </ContentControl>
                 </Grid>
             </Grid>
