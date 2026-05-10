@@ -112,12 +112,11 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,30">
-                <TextBlock Text="PS5 Official Theme" Foreground="White" FontSize="42" FontWeight="Bold"/>
-                <StackPanel Orientation="Horizontal" Margin="0,10,0,25">
-                    <TextBlock Text="★ ★ ★ ★" Foreground="White" FontSize="16" Margin="0,0,5,0"/>
-                    <TextBlock Text="☆" Foreground="Gray" FontSize="16"/>
-                    <TextBlock Text="4.2" Foreground="#00ADFF" FontSize="14" FontWeight="Bold" Margin="8,0,20,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="🧩 Rompecabezas desafiantes" Foreground="#AAA" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock x:Name="lblTitle" Text="Cargando..." Foreground="White" FontSize="42" FontWeight="Bold"/>
+                <StackPanel x:Name="RatingPanel" Orientation="Horizontal" Margin="0,10,0,25" Visibility="Collapsed">
+                    <TextBlock x:Name="lblStars" Foreground="White" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="lblRatingValue" Foreground="#00ADFF" FontSize="14" FontWeight="Bold" Margin="8,0,20,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="lblRatingCount" Foreground="#AAA" FontSize="14" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
 
@@ -127,17 +126,14 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="500"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" CornerRadius="20,20,0,0" Background="Black" ClipToBounds="True">
+                <StackPanel Grid.Row="0">
+                    <!-- Video (sin controles dentro) -->
+                    <Border x:Name="PlayerBorder" CornerRadius="20,20,0,0" Background="Black" ClipToBounds="True" Height="480"
+                            MouseEnter="PlayerBorder_MouseEnter" MouseMove="PlayerBorder_MouseMove" MouseLeave="PlayerBorder_MouseLeave">
                         <Grid>
                             <vlc:VideoView x:Name="VideoPlayerDetalle" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-                            <StackPanel x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
 
+                            <StackPanel x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
                                 <ContentControl Width="80" Height="80" RenderTransformOrigin="0.5,0.5">
                                     <ContentControl.RenderTransform>
                                         <ScaleTransform x:Name="LoadingScale" ScaleX="1" ScaleY="1"/>
@@ -146,75 +142,72 @@
                                         <EventTrigger RoutedEvent="Loaded">
                                             <BeginStoryboard>
                                                 <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" 
-                                         Storyboard.TargetProperty="ScaleX" 
-                                         To="1.1" Duration="0:0:0.8"/>
-                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" 
-                                         Storyboard.TargetProperty="ScaleY" 
-                                         To="1.1" Duration="0:0:0.8"/>
+                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" Storyboard.TargetProperty="ScaleX" To="1.1" Duration="0:0:0.8"/>
+                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" Storyboard.TargetProperty="ScaleY" To="1.1" Duration="0:0:0.8"/>
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </EventTrigger>
                                     </ContentControl.Triggers>
-
                                     <Viewbox Stretch="Uniform">
                                         <Canvas Width="612.092" Height="560.54">
                                             <Canvas.RenderTransform>
                                                 <TranslateTransform X="-61.68556" Y="-312.8684"/>
                                             </Canvas.RenderTransform>
-                                            <Path Fill="#FFDE0029" Data="M 395.06807 434.21345 L 394.60021 863.39514 L 279.61012 825.99696 L 279.61012 321.53515 L 426.38841 360.34125 C 520.34231 385.59251 577.83949 434.67697 576.90381 520.70189 C 575.96956 620.75529 529.69221 660.95773 439.47538 634.77658 L 439.47538 437.47977 C 439.47538 413.635 395.06807 412.23866 395.06807 434.21345 z" />
-                                            <Path Fill="#FFF3C202" Data="M 226.78568 742.76757 L 172.56056 761.00535 C 137.49733 773.16387 107.58489 744.64627 139.83807 732.95128 L 166.01346 723.60717 L 67.381005 692.27665 C 36.994899 702.56663 8.4787729 724.53999 10.3531 755.3983 C 12.223081 786.7187 83.74009 794.20296 138.90381 803.08643 C 190.32031 811.49773 237.06553 806.82349 279.60869 791.86223 L 279.60869 759.60031 L 226.78568 742.76757 z M 395.53446 863.39514 L 496.03688 828.32754 L 394.60021 796.07291 L 394.60021 861.05298 L 395.53446 863.39514 z" />
-                                            <Path Fill="#FF326DB3" Data="M 662.91715 769.42531 L 664.78565 768.95457 C 708.72663 753.53123 727.42501 732.01703 722.75363 711.92089 C 715.27373 678.26121 661.51646 660.02348 578.77524 653.9442 C 519.41092 649.73926 460.98092 662.82627 403.95154 682.46035 L 394.60164 685.73681 L 496.97405 717.52794 L 556.80624 697.42166 C 619.44554 685.73681 644.69244 706.30513 584.38808 725.47573 L 554.46981 735.75553 L 662.91715 769.42531 z M 279.61012 620.75529 L 234.26272 636.17869 L 279.61012 650.2057 L 279.61012 620.75529 z" />
-                                            <Path Fill="#FF00AA9E" Data="M 496.03688 828.32754 L 662.91715 769.42531 L 554.46695 735.75553 L 394.60021 790.45575 L 394.60021 796.07291 L 496.03688 828.32754 z M 279.61012 725.00349 L 226.78712 742.76906 L 279.61012 759.60031 L 279.61012 725.00349 z M 394.60021 752.5955 L 394.60021 685.73681 L 496.97262 717.52794 L 394.60021 752.5955 z M 166.01492 723.60717 L 279.60869 682.93251 L 279.60869 650.2057 L 234.26272 636.17869 L 69.718853 691.81461 C 69.250983 691.81461 68.316721 692.27665 67.38246 692.27665 L 166.01492 723.60717 z" />
-                                        </Canvas>
-                                    </Viewbox>
-                                </ContentControl>
+                                            <Path Fill="#FFDE0029" Data="M 395.06807 434.21345 L 394.60021 863.39514 L 279.61012 825.99696 L 279.61012 321.53515 L 426.38841 360.34125 C 520.34231 385.59251 577.83949 434.67697 576.90381 520.70189 C 575.96956 620.75529 529.69221 660.95773 439.47538 634.77658 L 439.47538 437.47977 C 439.47538 413.635 395.06807 412.23866 395.06807 434.21345 z"/>
+                                            <Path Fill="#FFF3C202" Data="M 226.78568 742.76757 L 172.56056 761.00535 C 137.49733 773.16387 107.58489 744.64627 139.83807 732.95128 L 166.01346 723.60717 L 67.381005 692.27665 C 36.994899 702.56663 8.4787729 724.53999 10.3531 755.3983 C 12.223081 786.7187 83.74009 794.20296 138.90381 803.08643 C 190.32031 811.49773 237.06553 806.82349 279.60869 791.86223 L 279.60869 759.60031 L 226.78568 742.76757 z M 395.53446 863.39514 L 496.03688 828.32754 L 394.60021 796.07291 L 394.60021 861.05298 L 395.53446 863.39514 z"/>
+                                            <Path Fill="#FF326DB3" Data="M 662.91715 769.42531 L 664.78565 768.95457 C 708.72663 753.53123 727.42501 732.01703 722.75363 711.92089 C 715.27373 678.26121 661.51646 660.02348 578.77524 653.9442 C 519.41092 649.73926 460.98092 662.82627 403.95154 682.46035 L 394.60164 685.73681 L 496.97405 717.52794 L 556.80624 697.42166 C 619.44554 685.73681 644.69244 706.30513 584.38808 725.47573 L 554.46981 735.75553 L 662.91715 769.42531 z M 279.61012 620.75529 L 234.26272 636.17869 L 279.61012 650.2057 L 279.61012 620.75529 z"/>
+                                            <Path Fill="#FF00AA9E" Data="M 496.03688 828.32754 L 662.91715 769.42531 L 554.46695 735.75553 L 394.60021 790.45575 L 394.60021 796.07291 L 496.03688 828.32754 z M 279.61012 725.00349 L 226.78712 742.76906 L 279.61012 759.60031 L 279.61012 725.00349 z M 394.60021 752.5955 L 394.60021 685.73681 L 496.97262 717.52794 L 394.60021 752.5955 z M 166.01492 723.60717 L 279.60869 682.93251 L 279.60869 650.2057 L 234.26272 636.17869 L 69.718853 691.81461 C 69.250983 691.81461 68.316721 692.27665 67.38246 692.27665 L 166.01492 723.60717 z"/>
+                                            </Canvas>
+                                        </Viewbox>
+                                    </ContentControl>
+                                    <ProgressBar IsIndeterminate="True" Width="100" Height="4" Foreground="#00ADFF" Background="Transparent" BorderThickness="0" Margin="0,15,0,0"/>
+                                    <TextBlock Text="Cargando..." Foreground="White" Margin="0,10,0,0" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                </StackPanel>
 
-                                <ProgressBar IsIndeterminate="True" Width="100" Height="4" Foreground="#00ADFF" Background="Transparent" BorderThickness="0" Margin="0,15,0,0"/>
-                                <TextBlock Text="Cargando..." Foreground="White" Margin="0,10,0,0" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                            </StackPanel>
-                            <Button x:Name="btnPrev" Content="❮" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Left" Margin="20,0,0,0" Click="btnPrev_Click"/>
-                            <Button x:Name="btnNext" Content="❯" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Right" Margin="0,0,20,0" Click="btnNext_Click"/>
-                        </Grid>
-                    </Border>
+                                <Button x:Name="btnPrev" Content="❮" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Left" Margin="20,0,0,0" Click="btnPrev_Click"/>
+                                <Button x:Name="btnNext" Content="❯" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Right" Margin="0,0,20,0" Click="btnNext_Click"/>
+                            </Grid>
+                        </Border>
 
-                    <Border Grid.Row="1" Background="#CC1C2030" CornerRadius="0,0,20,20" Padding="20,15">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Slider x:Name="TimelineSlider" Style="{StaticResource ModernSlider}" Maximum="100" Thumb.DragStarted="TimelineSlider_DragStarted" Thumb.DragCompleted="TimelineSlider_DragCompleted"/>
-                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,0">
-                                <Button x:Name="btnPlayPause" Content="{StaticResource IconPlay}" Width="30" Height="30" Background="Transparent" BorderThickness="0" Click="btnPlayPause_Click"/>
-                                <Button x:Name="btnMute" Content="{StaticResource IconVolOn}" Width="25" Height="30" Background="Transparent" BorderThickness="0" Margin="15,0" Click="btnMute_Click"/>
-                                <TextBlock x:Name="lblTime" Text="0:00" Foreground="White" VerticalAlignment="Center"/>
-                                <TextBlock Text=" / " Foreground="Gray" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="lblTotalTime" Text="0:00" Foreground="Gray" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
+                        <!-- Controles debajo del video, estilo YouTube -->
+                        <Border x:Name="ControlsPanel" CornerRadius="0,0,20,20" Background="#1C2030" Padding="12,12" Height="68"
+                                MouseEnter="ControlsPanel_MouseEnter" MouseMove="ControlsPanel_MouseMove">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Slider x:Name="TimelineSlider" Style="{StaticResource ModernSlider}" Maximum="100" Thumb.DragStarted="TimelineSlider_DragStarted" Thumb.DragCompleted="TimelineSlider_DragCompleted"/>
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
+                                    <Button x:Name="btnPlayPause" Content="{StaticResource IconPlay}" Width="28" Height="28" Background="Transparent" BorderThickness="0" Click="btnPlayPause_Click" Foreground="White"/>
+                                    <Button x:Name="btnMute" Content="{StaticResource IconVolOn}" Width="22" Height="28" Background="Transparent" BorderThickness="0" Margin="10,0" Click="btnMute_Click" Foreground="White"/>
+                                    <TextBlock x:Name="lblTime" Text="0:00" Foreground="White" VerticalAlignment="Center" FontSize="12"/>
+                                    <TextBlock Text=" / " Foreground="Gray" VerticalAlignment="Center" FontSize="12"/>
+                                    <TextBlock x:Name="lblTotalTime" Text="0:00" Foreground="Gray" VerticalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
 
-                <UniformGrid Grid.Row="1" Columns="3" Margin="0,20,0,0">
-                    <Button Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="video">
+                <UniformGrid x:Name="ThumbnailsGrid" Grid.Row="1" Columns="3" Margin="0,20,0,0">
+                    <Button x:Name="ThumbBtn0" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="video">
                         <Border x:Name="BorderThumb0" Height="120" CornerRadius="10" BorderThickness="2" BorderBrush="#00ADFF" ClipToBounds="True">
                             <Grid>
-                                <Image Source="https://ik.imagekit.io/manuel/ps2_thumb.jpg" Stretch="UniformToFill" Opacity="0.6"/>
+                                <Image x:Name="ThumbImg0" Source="https://ik.imagekit.io/manuel/ps2_thumb.jpg" Stretch="UniformToFill" Opacity="0.6"/>
                                 <Viewbox Width="30" Height="30">
                                     <Path Fill="White" Data="M8,5.14V19.14L19,12.14L8,5.14Z"/>
                                 </Viewbox>
                             </Grid>
                         </Border>
                     </Button>
-                    <Button Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img1">
+                    <Button x:Name="ThumbBtn1" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img1">
                         <Border x:Name="BorderThumb1" Height="120" CornerRadius="10" BorderThickness="0" BorderBrush="#00ADFF" ClipToBounds="True">
-                            <Image Source="https://repository-images.githubusercontent.com/70989832/bbb2a500-ca21-11ea-9e6d-8b11db4ff655" Stretch="UniformToFill"/>
+                            <Image x:Name="ThumbImg1" Stretch="UniformToFill"/>
                         </Border>
                     </Button>
-                    <Button Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img2">
+                    <Button x:Name="ThumbBtn2" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img2">
                         <Border x:Name="BorderThumb2" Height="120" CornerRadius="10" BorderThickness="0" BorderBrush="#00ADFF" ClipToBounds="True">
-                            <Image Source="https://repository-images.githubusercontent.com/70989832/bbb2a500-ca21-11ea-9e6d-8b11db4ff655" Stretch="UniformToFill"/>
+                            <Image x:Name="ThumbImg2" Stretch="UniformToFill"/>
                         </Border>
                     </Button>
                 </UniformGrid>
@@ -223,8 +216,8 @@
             <StackPanel Grid.Row="1" Grid.Column="1">
                 <Border Background="#1C2030" CornerRadius="20" Padding="25">
                     <StackPanel>
-                        <TextBlock Text="GRATIS" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                        <Button x:Name="btnDownload" Content="CONSEGUIR" Margin="0,20,0,0" Height="50" Background="#00ADFF" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="btnDownload_Click"/>
+                        <TextBlock x:Name="lblPrice" Text="GRATIS" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                        <Button x:Name="btnDownload" Margin="0,20,0,0" Height="50" Background="#00ADFF" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="btnDownload_Click"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -232,10 +225,10 @@
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,40,0,0">
                 <Separator Background="#33FFFFFF" Margin="0,0,0,30"/>
                 <TextBlock Text="Descripción" Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock TextWrapping="Wrap" Foreground="#AAA" FontSize="16" LineHeight="24" Text="{Binding descripcion}" />
+                <TextBlock x:Name="lblDescripcion" TextWrapping="Wrap" Foreground="#AAA" FontSize="16" LineHeight="24" />
 
                 <TextBlock Text="Características" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
-                <ItemsControl ItemsSource="{Binding caracteristicas}">
+                <ItemsControl x:Name="CaracteristicasList" Visibility="Collapsed">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
@@ -247,12 +240,12 @@
                 </ItemsControl>
 
                 <TextBlock Text="Valorar" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
-                <StackPanel Orientation="Horizontal">
-                    <Button Content="1" Width="36" Height="36" Margin="4" Click="Vote_Click" Tag="1"/>
-                    <Button Content="2" Width="36" Height="36" Margin="4" Click="Vote_Click" Tag="2"/>
-                    <Button Content="3" Width="36" Height="36" Margin="4" Click="Vote_Click" Tag="3"/>
-                    <Button Content="4" Width="36" Height="36" Margin="4" Click="Vote_Click" Tag="4"/>
-                    <Button Content="5" Width="36" Height="36" Margin="4" Click="Vote_Click" Tag="5"/>
+                <StackPanel x:Name="VotePanel" Orientation="Horizontal" Visibility="Collapsed">
+                    <Button x:Name="StarBtn1" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="1" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                    <Button x:Name="StarBtn2" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="2" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                    <Button x:Name="StarBtn3" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="3" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                    <Button x:Name="StarBtn4" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="4" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                    <Button x:Name="StarBtn5" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="5" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
                     <TextBlock x:Name="txtRatingInfo" Text="" Foreground="#AAA" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </StackPanel>
             </StackPanel>

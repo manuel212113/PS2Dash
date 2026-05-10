@@ -39,7 +39,7 @@ namespace PS2Desktop.Services
 CREATE TABLE IF NOT EXISTS public.users (
     id uuid PRIMARY KEY,
     email text NOT NULL UNIQUE,
-    password_hash text NOT NULL,
+    password_hash text,
     created_at timestamptz DEFAULT now()
 );
 
@@ -76,6 +76,27 @@ CREATE TABLE IF NOT EXISTS public.votes (
     created_at timestamptz DEFAULT now(),
     UNIQUE (item_id, user_id, item_type)
 );
+
+CREATE TABLE IF NOT EXISTS public.avatars (
+    id uuid PRIMARY KEY,
+    nombre text NOT NULL,
+    image_url text NOT NULL,
+    created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_url text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS google_id text UNIQUE;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE public.users ALTER COLUMN password_hash DROP NOT NULL;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS game_id text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS publisher text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS genero text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS fecha_lanzamiento text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS region text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS media_type text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS jugadores text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS resolucion text;
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS widescreen boolean default false;
 ";
 
             await using var conn = new NpgsqlConnection(_connectionString);
@@ -157,7 +178,7 @@ CREATE TABLE IF NOT EXISTS public.votes (
         {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, email, password_hash, created_at FROM public.users WHERE email = @email LIMIT 1";
+            var sql = "SELECT id, email, password_hash, avatar_url, created_at FROM public.users WHERE email = @email LIMIT 1";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@email", email);
             await using var reader = await cmd.ExecuteReaderAsync();
@@ -171,11 +192,144 @@ CREATE TABLE IF NOT EXISTS public.votes (
                         id = reader.GetGuid(0),
                         email = reader.GetString(1),
                         password_hash = hash,
-                        created_at = reader.GetDateTime(3)
+                        avatar_url = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        created_at = reader.GetDateTime(4)
                     };
                 }
             }
             return null;
+        }
+
+        public async Task<User> FindOrCreateUserWithGoogleAsync(string googleId, string email, string name, string? avatarUrl)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            // Check if user exists by google_id or email
+            var sql = @"SELECT id, email, password_hash, avatar_url, google_id, display_name, created_at
+                        FROM public.users
+                        WHERE google_id = @googleId OR email = @email
+                        LIMIT 1";
+            await using var find = new NpgsqlCommand(sql, conn);
+            find.Parameters.AddWithValue("@googleId", googleId);
+            find.Parameters.AddWithValue("@email", email);
+            await using var reader = await find.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                var user = new User
+                {
+                    id = reader.GetGuid(0),
+                    email = reader.GetString(1),
+                    password_hash = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    avatar_url = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    google_id = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    display_name = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    created_at = reader.GetDateTime(6)
+                };
+
+                // If found by email but no google_id linked, link it now
+                if (user.google_id == null)
+                {
+                    await reader.CloseAsync();
+                    var update = "UPDATE public.users SET google_id = @googleId, display_name = @name WHERE id = @id";
+                    await using var cmd2 = new NpgsqlCommand(update, conn);
+                    cmd2.Parameters.AddWithValue("@googleId", googleId);
+                    cmd2.Parameters.AddWithValue("@name", name);
+                    cmd2.Parameters.AddWithValue("@id", user.id);
+                    await cmd2.ExecuteNonQueryAsync();
+                    user.google_id = googleId;
+                    user.display_name = name;
+                }
+
+                // Update avatar if Google has one and user has none
+                if (avatarUrl != null && user.avatar_url == null)
+                {
+                    user.avatar_url = avatarUrl;
+                    await reader.CloseAsync();
+                    var update = "UPDATE public.users SET avatar_url = @url WHERE id = @id";
+                    await using var cmd2 = new NpgsqlCommand(update, conn);
+                    cmd2.Parameters.AddWithValue("@url", avatarUrl);
+                    cmd2.Parameters.AddWithValue("@id", user.id);
+                    await cmd2.ExecuteNonQueryAsync();
+                }
+
+                return user;
+            }
+
+            // Create new user with Google info
+            await reader.CloseAsync();
+            var id = Guid.NewGuid();
+            var insert = @"INSERT INTO public.users (id, email, avatar_url, google_id, display_name)
+                           VALUES (@id, @email, @avatarUrl, @googleId, @name)
+                           RETURNING id, email, avatar_url, google_id, display_name, created_at";
+            await using var cmd3 = new NpgsqlCommand(insert, conn);
+            cmd3.Parameters.AddWithValue("@id", id);
+            cmd3.Parameters.AddWithValue("@email", email);
+            cmd3.Parameters.AddWithValue("@avatarUrl", (object?)avatarUrl ?? DBNull.Value);
+            cmd3.Parameters.AddWithValue("@googleId", googleId);
+            cmd3.Parameters.AddWithValue("@name", name);
+            await using var r2 = await cmd3.ExecuteReaderAsync();
+            if (await r2.ReadAsync())
+            {
+                return new User
+                {
+                    id = r2.GetGuid(0),
+                    email = r2.GetString(1),
+                    avatar_url = r2.IsDBNull(2) ? null : r2.GetString(2),
+                    google_id = r2.IsDBNull(3) ? null : r2.GetString(3),
+                    display_name = r2.IsDBNull(4) ? null : r2.GetString(4),
+                    created_at = r2.GetDateTime(5)
+                };
+            }
+            return null;
+        }
+
+        // Avatars
+        public async Task<List<(Guid id, string nombre, string image_url)>> GetAvatarsAsync()
+        {
+            var list = new List<(Guid, string, string)>();
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT id, nombre, image_url FROM public.avatars ORDER BY nombre";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+                list.Add((reader.GetGuid(0), reader.GetString(1), reader.GetString(2)));
+            return list;
+        }
+
+        public async Task CreateAvatarAsync(string nombre, string imageUrl)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "INSERT INTO public.avatars (id, nombre, image_url) VALUES (@id, @nombre, @url)";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", Guid.NewGuid());
+            cmd.Parameters.AddWithValue("@nombre", nombre);
+            cmd.Parameters.AddWithValue("@url", imageUrl);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task DeleteAvatarAsync(Guid id)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "DELETE FROM public.avatars WHERE id = @id";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task UpdateUserAvatarAsync(Guid userId, string? avatarUrl)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "UPDATE public.users SET avatar_url = @url WHERE id = @id";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", userId);
+            cmd.Parameters.AddWithValue("@url", (object?)avatarUrl ?? DBNull.Value);
+            await cmd.ExecuteNonQueryAsync();
         }
 
         // Themes
@@ -225,6 +379,26 @@ CREATE TABLE IF NOT EXISTS public.votes (
             return list;
         }
 
+        public async Task DeleteThemeAsync(Guid id)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "DELETE FROM public.themes WHERE id = @id";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task DeleteGameAsync(Guid id)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "DELETE FROM public.games WHERE id = @id";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         public async Task CreateThemeAsync(Theme theme)
         {
             var id = Guid.NewGuid();
@@ -245,25 +419,55 @@ CREATE TABLE IF NOT EXISTS public.votes (
         }
 
         // Games
-        public async Task<List<Game>> GetGamesAsync()
+        public async Task<Game> GetGameByIdAsync(Guid id)
         {
-            var list = new List<Game>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, created_at FROM public.games ORDER BY created_at DESC";
+            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, created_at FROM public.games WHERE id = @id LIMIT 1";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", id);
             await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+            if (await reader.ReadAsync())
             {
-                var g = new Game
+                return new Game
                 {
+                    id = reader.GetGuid(0),
                     nombre = reader.IsDBNull(1) ? null : reader.GetString(1),
                     autor = reader.IsDBNull(2) ? null : reader.GetString(2),
                     descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
                     caracteristicas = reader.IsDBNull(4) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(reader.GetString(4)),
                     video_demo = reader.IsDBNull(5) ? null : reader.GetString(5),
                     link_descarga = reader.IsDBNull(6) ? null : reader.GetString(6),
-                    image_url = reader.IsDBNull(7) ? null : reader.GetString(7)
+                    image_url = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    game_id = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    created_at = reader.GetDateTime(9)
+                };
+            }
+            return null;
+        }
+
+        public async Task<List<Game>> GetGamesAsync()
+        {
+            var list = new List<Game>();
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, created_at FROM public.games ORDER BY created_at DESC";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var g = new Game
+                {
+                    id = reader.GetGuid(0),
+                    nombre = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    autor = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    descripcion = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    caracteristicas = reader.IsDBNull(4) ? new List<string>() : JsonSerializer.Deserialize<List<string>>(reader.GetString(4)),
+                    video_demo = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    link_descarga = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    image_url = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    game_id = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    created_at = reader.GetDateTime(9)
                 };
                 list.Add(g);
             }
@@ -272,20 +476,33 @@ CREATE TABLE IF NOT EXISTS public.votes (
 
         public async Task CreateGameAsync(Game game)
         {
-            var id = Guid.NewGuid();
+            var id = game.id == Guid.Empty ? Guid.NewGuid() : game.id;
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "INSERT INTO public.games (id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url) VALUES (@id,@nombre,@autor,@descripcion,@caracteristicas::jsonb,@video,@link,@img)";
+            var sql = @"INSERT INTO public.games
+                (id, nombre, autor, publisher, descripcion, genero, fecha_lanzamiento, region, media_type,
+                 caracteristicas, video_demo, link_descarga, image_url, game_id, jugadores, resolucion, widescreen)
+                VALUES (@id,@nombre,@autor,@publisher,@descripcion,@genero,@fecha,@region,@media,
+                        @caracteristicas::jsonb,@video,@link,@img,@game_id,@jugadores,@resolucion,@widescreen)";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@nombre", game.nombre ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@autor", game.autor ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@publisher", game.publisher ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@descripcion", game.descripcion ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@genero", game.genero ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@fecha", game.fecha_lanzamiento ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@region", game.region ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@media", game.media_type ?? (object)DBNull.Value);
             var charJson = JsonSerializer.Serialize(game.caracteristicas ?? new List<string>());
             cmd.Parameters.AddWithValue("@caracteristicas", charJson);
             cmd.Parameters.AddWithValue("@video", game.video_demo ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@link", game.link_descarga ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@img", game.image_url ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@game_id", game.game_id ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@jugadores", game.jugadores ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@resolucion", game.resolucion ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@widescreen", game.widescreen);
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -316,6 +533,53 @@ ON CONFLICT (item_id, user_id, item_type) DO UPDATE SET value = EXCLUDED.value, 
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@item", itemId);
             cmd.Parameters.AddWithValue("@type", itemType);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                var avg = reader.IsDBNull(0) ? 0.0 : reader.GetDouble(0);
+                var cnt = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                return (avg, cnt);
+            }
+            return (0.0, 0);
+        }
+
+        // Home stats
+        public async Task<int> GetThemeCountAsync()
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT COUNT(*) FROM public.themes";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            var result = await cmd.ExecuteScalarAsync();
+            return result is long l ? (int)l : 0;
+        }
+
+        public async Task<int> GetGameCountAsync()
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT COUNT(*) FROM public.games";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            var result = await cmd.ExecuteScalarAsync();
+            return result is long l ? (int)l : 0;
+        }
+
+        public async Task<int> GetUserCountAsync()
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT COUNT(*) FROM public.users";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            var result = await cmd.ExecuteScalarAsync();
+            return result is long l ? (int)l : 0;
+        }
+
+        public async Task<(double average, int count)> GetGlobalAverageRatingAsync()
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = "SELECT AVG(value)::float AS avg, COUNT(*) AS cnt FROM public.votes";
+            await using var cmd = new NpgsqlCommand(sql, conn);
             await using var reader = await cmd.ExecuteReaderAsync();
             if (await reader.ReadAsync())
             {

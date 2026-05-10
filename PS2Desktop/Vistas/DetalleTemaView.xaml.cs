@@ -6,6 +6,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using PS2Desktop.Modelos;
@@ -20,16 +23,14 @@ namespace PS2Desktop.Vistas
         private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
         private bool _isDraggingSlider = false;
         private readonly YoutubeClient _youtubeClient = new YoutubeClient();
-        private Theme _temaActual; // Almacenar el tema actual
+        private Theme _temaActual;
+        private int _userVote = 0;
 
-        // Lista para manejar la navegación (Video + Imágenes)
-        private List<string> _mediaSources = new List<string>
-        {
-            "https://www.youtube.com/watch?v=1rKvzlDDiLw", // Índice 0: Video
-            "https://repository-images.githubusercontent.com/70989832/bbb2a500-ca21-11ea-9e6d-8b11db4ff655", // Índice 1
-            "https://repository-images.githubusercontent.com/70989832/bbb2a500-ca21-11ea-9e6d-8b11db4ff655"  // Índice 2
-        };
+        private const string DefaultVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+
+        private List<string> _mediaSources = new List<string>();
         private int _currentIndex = 0;
+        private DispatcherTimer _hideTimer;
 
         public DetalleTemaView()
         {
@@ -61,8 +62,77 @@ namespace PS2Desktop.Vistas
                 }
             };
 
+            _hideTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(10)
+            };
+            _hideTimer.Tick += (s, e) =>
+            {
+                if (ControlsPanel == null) return;
+                var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5));
+                fade.Completed += (_, _) =>
+                {
+                    if (ControlsPanel != null)
+                        ControlsPanel.Visibility = Visibility.Collapsed;
+                };
+                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, fade);
+                _hideTimer.Stop();
+            };
+
             this.Loaded += DetalleTemaView_Loaded;
             this.Unloaded += (s, e) => Dispose();
+        }
+
+        private void PlayerBorder_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (_currentIndex == 0 && ControlsPanel != null && ControlsPanel.Visibility != Visibility.Visible)
+            {
+                ControlsPanel.Visibility = Visibility.Visible;
+                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
+                _hideTimer.Stop();
+                _hideTimer.Start();
+            }
+        }
+
+        private void PlayerBorder_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_currentIndex == 0 && ControlsPanel != null)
+            {
+                bool wasHidden = ControlsPanel.Visibility != Visibility.Visible;
+                ControlsPanel.Visibility = Visibility.Visible;
+                if (wasHidden)
+                    ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
+                _hideTimer.Stop();
+                _hideTimer.Start();
+            }
+        }
+
+        private void PlayerBorder_MouseLeave(object sender, MouseEventArgs e)
+        {
+            // Timer handles auto-hide
+        }
+
+        private void ControlsPanel_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (_currentIndex == 0 && ControlsPanel != null)
+            {
+                ControlsPanel.Visibility = Visibility.Visible;
+                _hideTimer.Stop();
+                _hideTimer.Start();
+            }
+        }
+
+        private void ControlsPanel_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_currentIndex == 0 && ControlsPanel != null)
+            {
+                bool wasHidden = ControlsPanel.Visibility != Visibility.Visible;
+                ControlsPanel.Visibility = Visibility.Visible;
+                if (wasHidden)
+                    ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
+                _hideTimer.Stop();
+                _hideTimer.Start();
+            }
         }
 
         /// <summary>
@@ -71,26 +141,109 @@ namespace PS2Desktop.Vistas
         public void SetTema(Theme tema)
         {
             _temaActual = tema;
+            this.DataContext = tema;
 
-            // Actualizar las fuentes de media con los datos del tema
-            if (!string.IsNullOrEmpty(tema.video_demo))
+            // --- Título ---
+            lblTitle.Text = tema.nombre ?? "Sin título";
+
+            // --- Descripción ---
+            lblDescripcion.Text = tema.descripcion ?? "Sin descripción";
+
+            // --- Características ---
+            if (tema.caracteristicas != null && tema.caracteristicas.Count > 0)
             {
-                _mediaSources[0] = tema.video_demo;
+                CaracteristicasList.ItemsSource = tema.caracteristicas;
+                CaracteristicasList.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                CaracteristicasList.Visibility = Visibility.Collapsed;
             }
 
+            // --- Rating ---
+            _ = CargarRatingAsync(tema.id);
+
+            // --- Sidebar (precio / botón) ---
+            lblPrice.Text = "GRATIS";
+            btnDownload.Content = string.IsNullOrEmpty(tema.link_descarga) ? "No disponible" : "CONSEGUIR";
+            btnDownload.IsEnabled = !string.IsNullOrEmpty(tema.link_descarga);
+
+            // --- Thumbnails ---
             if (!string.IsNullOrEmpty(tema.image_url))
             {
-                _mediaSources[1] = tema.image_url;
+                ThumbImg0.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
+                ThumbImg1.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
+                ThumbImg2.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
             }
+            else
+            {
+                ThumbImg1.Visibility = Visibility.Collapsed;
+                ThumbImg2.Visibility = Visibility.Collapsed;
+            }
+
+            // --- Votación ---
+            VotePanel.Visibility = Visibility.Visible;
+            ConfigurarEstrellas();
+
+            // --- Media sources ---
+            _mediaSources = new List<string>
+            {
+                tema.video_demo,
+                tema.image_url,
+                null
+            };
+            _currentIndex = 0;
+        }
+
+        private async Task CargarRatingAsync(Guid themeId)
+        {
+            try
+            {
+                var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(themeId, "theme");
+                if (cnt > 0)
+                {
+                    RatingPanel.Visibility = Visibility.Visible;
+                    int fullStars = (int)Math.Round(avg, MidpointRounding.AwayFromZero);
+                    string stars = new string('★', fullStars).PadRight(5, '☆');
+                    lblStars.Text = stars;
+                    lblRatingValue.Text = avg.ToString("F1");
+                    lblRatingCount.Text = $"({cnt} {(cnt == 1 ? "voto" : "votos")})";
+                }
+            }
+            catch { }
         }
 
         private async void DetalleTemaView_Loaded(object sender, RoutedEventArgs e)
         {
             await Task.Delay(300);
-            await CambiarMedia(0); // Cargar video por defecto
+            if (_mediaSources.Count > 0 && _mediaSources[0] != null)
+                await CambiarMedia(0);
         }
 
-        // Lógica para cambiar entre video e imágenes
+        private void MostrarControles(bool visible)
+        {
+            if (ControlsPanel == null) return;
+            _hideTimer.Stop();
+            ControlsPanel.BeginAnimation(UIElement.OpacityProperty, null);
+
+            if (visible)
+            {
+                ControlsPanel.Visibility = Visibility.Visible;
+                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3)));
+                _hideTimer.Start();
+            }
+            else
+            {
+                var animOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.2));
+                animOut.Completed += (s, e) =>
+                {
+                    if (ControlsPanel != null && ControlsPanel.Opacity == 0)
+                        ControlsPanel.Visibility = Visibility.Collapsed;
+                };
+                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, animOut);
+            }
+        }
+
         private async Task CambiarMedia(int index)
         {
             _currentIndex = index;
@@ -99,34 +252,76 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                if (index == 0) // Es el Video de YouTube
+                if (index >= _mediaSources.Count || _mediaSources[index] == null)
                 {
-                    var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(_mediaSources[index]);
-                    var streamInfo = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-
-                    if (streamInfo != null)
-                    {
-                        var media = new Media(_libVLC, new Uri(streamInfo.Url));
-                        _mediaPlayer.Play(media);
-                        btnPlayPause.Content = this.FindResource("IconPause");
-                    }
+                    _mediaPlayer.Stop();
+                    return;
                 }
-                else // Es una imagen
+
+                bool esVideo = index == 0;
+                MostrarControles(esVideo);
+
+                if (esVideo)
+                {
+                    await ReproducirVideo(_mediaSources[index]);
+                }
+                else
                 {
                     var media = new Media(_libVLC, new Uri(_mediaSources[index]));
                     _mediaPlayer.Play(media);
-                    // Al ser imagen, pausamos para que no intente "reproducir" nada más
                     await Task.Delay(500);
                     _mediaPlayer.Pause();
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error al cambiar media: " + ex.Message);
+                Debug.WriteLine("Error al cambiar media: " + ex.Message);
             }
             finally
             {
                 LoadingPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private async Task ReproducirVideo(string videoUrl)
+        {
+            try
+            {
+                var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoUrl);
+                var streamInfo = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
+
+                if (streamInfo != null)
+                {
+                    var media = new Media(_libVLC, new Uri(streamInfo.Url));
+                    _mediaPlayer.Play(media);
+                    btnPlayPause.Content = this.FindResource("IconPause");
+                    return;
+                }
+            }
+            catch
+            {
+                Debug.WriteLine("Fallo el video principal, usando fallback");
+            }
+
+            if (videoUrl != DefaultVideoUrl)
+            {
+                try
+                {
+                    var fallbackManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(DefaultVideoUrl);
+                    var fallbackStream = fallbackManifest.GetMuxedStreams().GetWithHighestVideoQuality();
+
+                    if (fallbackStream != null)
+                    {
+                        _mediaSources[0] = DefaultVideoUrl;
+                        var media = new Media(_libVLC, new Uri(fallbackStream.Url));
+                        _mediaPlayer.Play(media);
+                        btnPlayPause.Content = this.FindResource("IconPause");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error en fallback de video: " + ex.Message);
+                }
             }
         }
 
@@ -149,22 +344,41 @@ namespace PS2Desktop.Vistas
             var btn = sender as Button;
             string tag = btn.Tag.ToString();
 
-            if (tag == "video") await CambiarMedia(0);
-            else if (tag == "img1") await CambiarMedia(1);
-            else if (tag == "img2") await CambiarMedia(2);
+            int index = tag switch
+            {
+                "video" => 0,
+                "img1" => 1,
+                "img2" => 2,
+                _ => 0
+            };
+
+            if (index < _mediaSources.Count && _mediaSources[index] != null)
+                await CambiarMedia(index);
         }
 
         // Navegación con flechas
         private async void btnPrev_Click(object sender, RoutedEventArgs e)
         {
-            int newIndex = _currentIndex - 1;
-            if (newIndex < 0) newIndex = _mediaSources.Count - 1;
+            int newIndex = _currentIndex;
+            for (int i = 0; i < _mediaSources.Count; i++)
+            {
+                newIndex--;
+                if (newIndex < 0) newIndex = _mediaSources.Count - 1;
+                if (newIndex < _mediaSources.Count && _mediaSources[newIndex] != null)
+                    break;
+            }
             await CambiarMedia(newIndex);
         }
 
         private async void btnNext_Click(object sender, RoutedEventArgs e)
         {
-            int newIndex = (_currentIndex + 1) % _mediaSources.Count;
+            int newIndex = _currentIndex;
+            for (int i = 0; i < _mediaSources.Count; i++)
+            {
+                newIndex = (newIndex + 1) % _mediaSources.Count;
+                if (_mediaSources[newIndex] != null)
+                    break;
+            }
             await CambiarMedia(newIndex);
         }
 
@@ -199,14 +413,18 @@ namespace PS2Desktop.Vistas
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset - e.Delta);
+            double newOffset = MainScrollViewer.VerticalOffset - e.Delta;
+            newOffset = Math.Max(0, Math.Min(newOffset, MainScrollViewer.ScrollableHeight));
+            MainScrollViewer.ScrollToVerticalOffset(newOffset);
             e.Handled = true;
         }
 
         private void MainScrollViewer_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up) MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset - 40);
-            if (e.Key == Key.Down) MainScrollViewer.ScrollToVerticalOffset(MainScrollViewer.VerticalOffset + 40);
+            double offset = MainScrollViewer.VerticalOffset;
+            if (e.Key == Key.Up) offset = Math.Max(0, offset - 40);
+            if (e.Key == Key.Down) offset = Math.Min(MainScrollViewer.ScrollableHeight, offset + 40);
+            MainScrollViewer.ScrollToVerticalOffset(offset);
             e.Handled = true;
         }
 
@@ -221,27 +439,51 @@ namespace PS2Desktop.Vistas
         public async Task ApplyTheme(Theme theme)
         {
             if (theme == null) return;
+            SetTema(theme);
+            await CambiarMedia(0);
+        }
 
-            this.DataContext = theme;
+        private void ConfigurarEstrellas()
+        {
+            var stars = new[] { StarBtn1, StarBtn2, StarBtn3, StarBtn4, StarBtn5 };
 
-            // Actualizar fuentes de media si hay video_demo o imagen
-            try
+            for (int i = 0; i < stars.Length; i++)
             {
-                if (!string.IsNullOrWhiteSpace(theme.video_demo))
-                {
-                    _mediaSources[0] = theme.video_demo;
-                }
-                if (!string.IsNullOrWhiteSpace(theme.image_url))
-                {
-                    if (_mediaSources.Count < 3) _mediaSources.Add(theme.image_url);
-                    else _mediaSources[1] = theme.image_url;
-                }
+                int idx = i + 1;
+                var btn = stars[i];
 
-                await CambiarMedia(0);
+                btn.MouseEnter += (s, e) =>
+                {
+                    for (int j = 0; j < stars.Length; j++)
+                    {
+                        stars[j].Content = j < idx ? "★" : "☆";
+                        stars[j].Foreground = j < idx
+                            ? new SolidColorBrush(Color.FromRgb(255, 215, 0))
+                            : new SolidColorBrush(Color.FromRgb(136, 142, 158));
+                    }
+                };
+
+                btn.MouseLeave += (s, e) => MostrarEstrellas(_userVote);
+
+                btn.Click += (s, e) =>
+                {
+                    _userVote = idx;
+                    MostrarEstrellas(idx);
+                    Vote_Click(s, e);
+                };
             }
-            catch (Exception ex)
+        }
+
+        private void MostrarEstrellas(int hasta)
+        {
+            var stars = new[] { StarBtn1, StarBtn2, StarBtn3, StarBtn4, StarBtn5 };
+            for (int j = 0; j < stars.Length; j++)
             {
-                Debug.WriteLine("Error ApplyTheme: " + ex.Message);
+                bool filled = j < hasta;
+                stars[j].Content = filled ? "★" : "☆";
+                stars[j].Foreground = filled
+                    ? new SolidColorBrush(Color.FromRgb(255, 215, 0))
+                    : new SolidColorBrush(Color.FromRgb(136, 142, 158));
             }
         }
 

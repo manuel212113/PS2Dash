@@ -12,30 +12,7 @@
 
     <Border Background="{StaticResource BackgroundBrush}" CornerRadius="25" BorderThickness="1" BorderBrush="#2A2F42" MouseDown="Border_MouseDown">
         <Grid>
-            <Grid Height="60" VerticalAlignment="Top" Margin="220,0,0,0">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
-                    <Button Content="‹" Foreground="White" FontSize="20" Background="Transparent" BorderThickness="0" Margin="0,0,10,0" Cursor="Hand"/>
-                    <Button Content="›" Foreground="#555" FontSize="20" Background="Transparent" BorderThickness="0" Margin="0,0,20,0"/>
-
-                    <Border Background="#1C2030" CornerRadius="15" Width="300" Height="35">
-                        <Grid>
-                            <StackPanel Orientation="Horizontal" Margin="12,0">
-                                <Path Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" 
-                                      Fill="#888E9E" Stretch="Uniform" Width="15" Margin="0,0,10,0"/>
-                                <TextBlock Text="Buscar en la tienda" Foreground="#888E9E" VerticalAlignment="Center" FontSize="13"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </StackPanel>
-
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,25,0">
-                    <Button Style="{StaticResource MinButtonStyle}" Margin="0,0,10,0" Click="BtnMinimize_Click"/>
-                    <Button Style="{StaticResource MaxButtonStyle}" Margin="0,0,10,0" Click="BtnMaximize_Click"/>
-                    <Button Style="{StaticResource CloseButtonStyle}" Click="BtnClose_Click"/>
-                </StackPanel>
-            </Grid>
-
-            <Grid>
+            <Grid x:Name="LayoutGrid">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="220"/>
                     <ColumnDefinition Width="*"/>
@@ -72,22 +49,65 @@
                                     <TextBlock Text="Juegos" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
+
+                            <Button x:Name="BtnCrear" Style="{StaticResource MenuButtonStyle}" Click="BtnCrear_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,15,0"/>
+                                    <TextBlock Text="Crear" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
 
-                        <StackPanel VerticalAlignment="Bottom" Margin="20">
-                            <Border Width="40" Height="40" Background="#2A2F42" CornerRadius="20" HorizontalAlignment="Left">
-                                <TextBlock Text="M" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold"/>
-                            </Border>
-                            <TextBlock Text="Manuel Toro" Foreground="White" Margin="0,5,0,0" FontWeight="SemiBold"/>
-                        </StackPanel>
+                        <Border x:Name="ProfileSection" VerticalAlignment="Bottom" Margin="16,0,16,16" Cursor="Hand"
+                                Background="Transparent" CornerRadius="12" Padding="8,8" MouseDown="ProfileSection_MouseDown">
+                            <StackPanel>
+                                <Border x:Name="AvatarBorder" Width="44" Height="44" Background="#2A2F42" CornerRadius="22" HorizontalAlignment="Left">
+                                    <Border.Clip>
+                                        <EllipseGeometry RadiusX="22" RadiusY="22" Center="22,22"/>
+                                    </Border.Clip>
+                                    <Image x:Name="AvatarImage" Stretch="UniformToFill" Width="44" Height="44"/>
+                                </Border>
+                                <TextBlock x:Name="ProfileName" Text="Usuario" Foreground="White" Margin="0,6,0,0" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock x:Name="LogoutText" Text="Cerrar sesión" Foreground="#888E9E"
+                                           FontSize="11" Cursor="Hand" Margin="0,6,0,0" Visibility="Collapsed"
+                                           MouseDown="LogoutText_MouseDown" MouseEnter="LogoutText_MouseEnter"
+                                           MouseLeave="LogoutText_MouseLeave"/>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Border>
 
-                <Grid Grid.Column="1" Margin="0,60,0,0">
+                <Grid Grid.Column="1" Margin="0,60,0,0" ClipToBounds="True">
                     <ContentControl x:Name="MainContentFrame">
                         <vistas:LoginView />
                     </ContentControl>
                 </Grid>
+            </Grid>
+
+            <!-- Header después del layout para que tenga el Z-order más alto -->
+            <Grid Height="60" VerticalAlignment="Top" Margin="220,0,0,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0">
+                    <Button Content="‹" Foreground="White" FontSize="20" Background="Transparent" BorderThickness="0" Margin="0,0,10,0" Cursor="Hand"/>
+                    <Button Content="›" Foreground="#555" FontSize="20" Background="Transparent" BorderThickness="0" Margin="0,0,20,0"/>
+
+                    <Border Background="#1C2030" CornerRadius="15" Width="300" Height="35">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" Margin="12,0">
+                                <Path Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                                      Fill="#888E9E" Stretch="Uniform" Width="15" Margin="0,0,10,0"/>
+                                <TextBlock Text="Buscar en la tienda" Foreground="#888E9E" VerticalAlignment="Center" FontSize="13"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,25,0">
+                    <Button Style="{StaticResource MinButtonStyle}" Margin="0,0,10,0" Click="BtnMinimize_Click"/>
+                    <Button Style="{StaticResource MaxButtonStyle}" Margin="0,0,10,0" Click="BtnMaximize_Click"/>
+                    <Button Style="{StaticResource CloseButtonStyle}" Click="BtnClose_Click"/>
+                </StackPanel>
             </Grid>
         </Grid>
     </Border>
