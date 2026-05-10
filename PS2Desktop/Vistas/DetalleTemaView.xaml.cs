@@ -1,4 +1,5 @@
 ﻿using LibVLCSharp.Shared;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using PS2Desktop.Modelos;
 using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 using System.Diagnostics;
 
 namespace PS2Desktop.Vistas
@@ -23,6 +25,8 @@ namespace PS2Desktop.Vistas
         private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
         private bool _isDraggingSlider = false;
         private readonly YoutubeClient _youtubeClient = new YoutubeClient();
+        private readonly IVoteRepository _voteRepo;
+        private readonly ISessionService _session;
         private Theme _temaActual;
         private int _userVote = 0;
 
@@ -36,6 +40,9 @@ namespace PS2Desktop.Vistas
         {
             Core.Initialize();
             InitializeComponent();
+
+            _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
 
             this.Loaded += (s, e) => MainScrollViewer.Focus();
             _libVLC = new LibVLC();
@@ -199,7 +206,7 @@ namespace PS2Desktop.Vistas
         {
             try
             {
-                var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(themeId, "theme");
+                var (avg, cnt) = await _voteRepo.GetAverageRatingAsync(themeId, "theme");
                 if (cnt > 0)
                 {
                     RatingPanel.Visibility = Visibility.Visible;
@@ -465,11 +472,12 @@ namespace PS2Desktop.Vistas
 
                 btn.MouseLeave += (s, e) => MostrarEstrellas(_userVote);
 
+                btn.Tag = idx.ToString();
                 btn.Click += (s, e) =>
                 {
                     _userVote = idx;
                     MostrarEstrellas(idx);
-                    Vote_Click(s, e);
+                    _ = EnviarVotoAsync(idx);
                 };
             }
         }
@@ -504,47 +512,37 @@ namespace PS2Desktop.Vistas
 
         private async void Vote_Click(object sender, RoutedEventArgs e)
         {
-            if (AppState.CurrentUser == null)
+            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
+                await EnviarVotoAsync(val);
+        }
+
+        private async Task EnviarVotoAsync(int valor)
+        {
+            if (!_session.IsLoggedIn)
             {
-                var win = new Window
-                {
-                    Title = "Iniciar sesión",
-                    Width = 820,
-                    Height = 480,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = Window.GetWindow(this),
-                    Content = new LoginView()
-                };
-                win.ShowDialog();
-                if (AppState.CurrentUser == null)
-                {
-                    MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
+            if (!(this.DataContext is Theme theme))
             {
-                if (!(this.DataContext is Theme theme))
-                {
-                    MessageBox.Show("No hay tema cargado.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
+                MessageBox.Show("No hay tema cargado.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-                try
+            try
+            {
+                bool ok = await _voteRepo.VoteAsync(theme.id, "theme", _session.CurrentUser!.id, valor);
+                if (ok)
                 {
-                    bool ok = await AppState.Db.VoteAsync(theme.id, "theme", AppState.CurrentUser.id, val);
-                    if (ok)
-                    {
-                        (double avg, int cnt) = await AppState.Db.GetAverageRatingAsync(theme.id, "theme");
-                        txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
-                    }
+                    (double avg, int cnt) = await _voteRepo.GetAverageRatingAsync(theme.id, "theme");
+                    txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error voting: " + ex.Message);
-                    MessageBox.Show("No se pudo registrar el voto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error voting: " + ex.Message);
+                MessageBox.Show("No se pudo registrar el voto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

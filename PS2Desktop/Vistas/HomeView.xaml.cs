@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -7,7 +10,6 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
-using PS2Desktop.Services;
 
 namespace PS2Desktop.Vistas
 {
@@ -17,12 +19,21 @@ namespace PS2Desktop.Vistas
         private int _gifFrameIndex;
         private DispatcherTimer _gifTimer;
 
+        private readonly IThemeRepository _themeRepo;
+        private readonly IGameRepository _gameRepo;
+        private readonly IUserRepository _userRepo;
+        private readonly IVoteRepository _voteRepo;
+
         public event EventHandler NavigateToTemas;
         public event EventHandler NavigateToJuegos;
 
         public HomeView()
         {
             InitializeComponent();
+            _themeRepo = App.ServiceProvider.GetRequiredService<IThemeRepository>();
+            _gameRepo = App.ServiceProvider.GetRequiredService<IGameRepository>();
+            _userRepo = App.ServiceProvider.GetRequiredService<IUserRepository>();
+            _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             this.Loaded += HomeView_Loaded;
         }
 
@@ -43,12 +54,10 @@ namespace PS2Desktop.Vistas
                 var uri = new Uri("pack://siteoforigin:,,,/Imagenes/ps2modelo.gif", UriKind.Absolute);
                 var decoder = new GifBitmapDecoder(uri, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
                 _gifFrames = new List<BitmapFrame>(decoder.Frames);
-
                 if (_gifFrames.Count > 0)
                 {
                     PS2ModelImage.Source = _gifFrames[0];
                     _gifFrameIndex = 0;
-
                     _gifTimer = new DispatcherTimer();
                     _gifTimer.Interval = TimeSpan.FromMilliseconds(50);
                     _gifTimer.Tick += (s, e) =>
@@ -59,45 +68,30 @@ namespace PS2Desktop.Vistas
                     _gifTimer.Start();
                 }
             }
-            catch
-            {
-                // fallback silencioso
-            }
+            catch { }
         }
 
         private void StartContinuousAnimations()
         {
-            if (FindResource("GlowPulse") is Storyboard glow)
-                glow.Begin(this);
-            if (FindResource("FloatAnim") is Storyboard floatAnim)
-                floatAnim.Begin(this);
-            if (FindResource("SweepAnim") is Storyboard sweep)
-                sweep.Begin(this);
+            if (FindResource("GlowPulse") is Storyboard glow) glow.Begin(this);
+            if (FindResource("FloatAnim") is Storyboard floatAnim) floatAnim.Begin(this);
+            if (FindResource("SweepAnim") is Storyboard sweep) sweep.Begin(this);
         }
 
         private void AnimateStaggeredEntrance()
         {
             var cards = new (FrameworkElement element, double delay)[]
             {
-                (StatCard1, 0.0),
-                (StatCard2, 0.1),
-                (StatCard3, 0.2),
-                (StatCard4, 0.3),
-                (DemoCard1, 0.4),
-                (DemoCard2, 0.5),
-                (DemoCard3, 0.6),
-                (QACard1, 0.7),
-                (QACard2, 0.8),
-                (QACard3, 0.9),
+                (StatCard1, 0.0), (StatCard2, 0.1), (StatCard3, 0.2), (StatCard4, 0.3),
+                (DemoCard1, 0.4), (DemoCard2, 0.5), (DemoCard3, 0.6),
+                (QACard1, 0.7), (QACard2, 0.8), (QACard3, 0.9),
             };
-
             var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
 
             foreach (var (element, delay) in cards)
             {
                 element.Opacity = 0;
                 element.RenderTransformOrigin = new Point(0.5, 0.5);
-
                 var translate = new TranslateTransform(0, 40);
                 var group = new TransformGroup();
                 if (element.RenderTransform is Transform existing && existing != Transform.Identity)
@@ -107,18 +101,10 @@ namespace PS2Desktop.Vistas
                 group.Children.Add(translate);
                 element.RenderTransform = group;
 
-                var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5))
-                {
-                    BeginTime = TimeSpan.FromSeconds(delay)
-                };
-                element.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-
-                var slideUp = new DoubleAnimation(40, 0, TimeSpan.FromSeconds(0.6))
-                {
-                    BeginTime = TimeSpan.FromSeconds(delay),
-                    EasingFunction = ease
-                };
-                translate.BeginAnimation(TranslateTransform.YProperty, slideUp);
+                element.BeginAnimation(UIElement.OpacityProperty,
+                    new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.5)) { BeginTime = TimeSpan.FromSeconds(delay) });
+                translate.BeginAnimation(TranslateTransform.YProperty,
+                    new DoubleAnimation(40, 0, TimeSpan.FromSeconds(0.6)) { BeginTime = TimeSpan.FromSeconds(delay), EasingFunction = ease });
             }
         }
 
@@ -142,7 +128,6 @@ namespace PS2Desktop.Vistas
                 scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, scaleTo, duration) { EasingFunction = ease });
                 scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(1, scaleTo, duration) { EasingFunction = ease });
             };
-
             element.MouseLeave += (s, e) =>
             {
                 scale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(scaleTo, 1, duration) { EasingFunction = ease });
@@ -154,33 +139,26 @@ namespace PS2Desktop.Vistas
         {
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
+                var taskTheme = _themeRepo.GetThemeCountAsync();
+                var taskGame = _gameRepo.GetGameCountAsync();
+                var taskUser = _userRepo.GetUserCountAsync();
+                var taskRating = _voteRepo.GetGlobalAverageRatingAsync();
 
-                var themeCount = await AppState.Db.GetThemeCountAsync();
-                var gameCount = await AppState.Db.GetGameCountAsync();
-                var userCount = await AppState.Db.GetUserCountAsync();
-                var (avgRating, _) = await AppState.Db.GetGlobalAverageRatingAsync();
+                await Task.WhenAll(taskTheme, taskGame, taskUser, taskRating);
 
-                StatTemas.Text = themeCount.ToString();
-                StatDemos.Text = gameCount.ToString();
-                StatUsers.Text = userCount.ToString();
-                StatRating.Text = avgRating > 0 ? avgRating.ToString("F1") : "0.0";
+                StatTemas.Text = (await taskTheme).ToString();
+                StatDemos.Text = (await taskGame).ToString();
+                StatUsers.Text = (await taskUser).ToString();
+                var (avg, _) = await taskRating;
+                StatRating.Text = avg > 0 ? avg.ToString("F1") : "0.0";
             }
-            catch
-            {
-                // DB no disponible — los valores quedan en 0
-            }
+            catch { }
         }
 
         private void WireNavigation()
         {
             BtnExplorarDemos.Click += (s, e) => NavigateToJuegos?.Invoke(this, EventArgs.Empty);
             BtnVerTemas.Click += (s, e) => NavigateToTemas?.Invoke(this, EventArgs.Empty);
-
             QACard1.MouseDown += (s, e) => NavigateToTemas?.Invoke(this, EventArgs.Empty);
             QACard2.MouseDown += (s, e) => NavigateToJuegos?.Invoke(this, EventArgs.Empty);
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,17 +9,20 @@ using System.Windows.Media.Imaging;
 using PS2Desktop.Vistas;
 using PS2Desktop.Modelos;
 using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop
 {
     public partial class MainWindow : Window
     {
+        private readonly ISessionService _session;
         private TemaView _currentTemaView;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
             SoundService.Initialize();
 
             // 1. CARGA INICIAL: Cargamos la vista de login
@@ -46,7 +50,7 @@ namespace PS2Desktop
 
         private bool VerificarLogin()
         {
-            return AppState.CurrentUser != null;
+            return _session.IsLoggedIn;
         }
 
         private void BtnHome_Click(object sender, RoutedEventArgs e)
@@ -166,7 +170,7 @@ namespace PS2Desktop
 
         private void ProfileSection_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (AppState.CurrentUser == null) return;
+            if (!_session.IsLoggedIn) return;
             var perfilView = new PerfilView();
             if (perfilView.ShowDialog() == true)
                 ActualizarPerfil();
@@ -175,7 +179,7 @@ namespace PS2Desktop
         private void LogoutText_MouseDown(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            AppState.CurrentUser = null;
+            _session.Logout();
             LogoutText.Visibility = Visibility.Collapsed;
             ProfileName.Text = "Usuario";
             AvatarImage.Source = null;
@@ -185,7 +189,7 @@ namespace PS2Desktop
                 btn.Background = Brushes.Transparent;
                 btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
             }
-            MainContentFrame.Content = new LoginView();
+            MostrarLogin(CargarHomeView);
         }
 
         private void LogoutText_MouseEnter(object sender, MouseEventArgs e)
@@ -200,7 +204,7 @@ namespace PS2Desktop
 
         public void ActualizarPerfil()
         {
-            var user = AppState.CurrentUser;
+            var user = _session.CurrentUser;
             if (user == null) return;
 
             LogoutText.Visibility = Visibility.Visible;

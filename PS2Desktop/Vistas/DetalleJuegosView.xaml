@@ -6,6 +6,7 @@
              xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="1200" d:DesignWidth="1200"
+             Opacity="0"
              Background="#0A0A10">
 
     <UserControl.Resources>
@@ -257,9 +258,40 @@
                 <Border Background="#1C2030" CornerRadius="20" Padding="20">
                     <StackPanel>
                         <TextBlock Text="GRATIS" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                        <Button x:Name="btnDownload" Margin="0,16,0,0" Height="50"
-                                Background="#00ADFF" Foreground="White" FontWeight="Bold"
-                                Cursor="Hand" Click="btnDownload_Click"/>
+                        <Button x:Name="btnDownload" Margin="0,16,0,0" Height="54"
+                                Background="#0055CC" Foreground="White" FontWeight="Bold"
+                                FontSize="14" Cursor="Hand" Click="btnDownload_Click"
+                                BorderThickness="0">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="#0055CC"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border CornerRadius="12"
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderThickness="0">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#0066DD"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter Property="Background" Value="#0044AA"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter Property="Background" Value="#2A2F42"/>
+                                                        <Setter Property="Foreground" Value="#6B7280"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
                         <Separator Background="#33FFFFFF" Margin="0,20,0,16"/>
 

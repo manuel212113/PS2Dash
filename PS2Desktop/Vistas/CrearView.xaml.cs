@@ -1,26 +1,32 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 using PS2Desktop.Modelos;
-using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop.Vistas
 {
     public partial class CrearView : UserControl
     {
+        private readonly IThemeRepository _themeRepo;
+        private readonly IGameRepository _gameRepo;
+        private readonly IAvatarRepository _avatarRepo;
+        private readonly ISessionService _session;
         private ObservableCollection<string> _caracteristicas = new ObservableCollection<string>();
 
         public CrearView()
         {
             InitializeComponent();
-            CaracteristicasList.ItemsSource = _caracteristicas;
-            RBTema.IsChecked = true;
+            _themeRepo = App.ServiceProvider.GetRequiredService<IThemeRepository>();
+            _gameRepo = App.ServiceProvider.GetRequiredService<IGameRepository>();
+            _avatarRepo = App.ServiceProvider.GetRequiredService<IAvatarRepository>();
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
         }
 
         private bool IsTemaMode => RBTema.IsChecked == true;
@@ -85,12 +91,6 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
                 if (IsTemaMode)
                 {
                     var tema = new Theme
@@ -104,7 +104,7 @@ namespace PS2Desktop.Vistas
                         link_descarga = string.IsNullOrWhiteSpace(TxtLinkDescarga.Text?.Trim()) ? null : TxtLinkDescarga.Text.Trim(),
                         image_url = string.IsNullOrWhiteSpace(TxtImageUrl.Text?.Trim()) ? null : TxtImageUrl.Text.Trim()
                     };
-                    await AppState.Db.CreateThemeAsync(tema);
+                    await _themeRepo.CreateThemeAsync(tema);
                     LblStatus.Text = $"✓ Tema «{nombre}» creado correctamente";
                 }
                 else
@@ -120,7 +120,7 @@ namespace PS2Desktop.Vistas
                         link_descarga = string.IsNullOrWhiteSpace(TxtLinkDescarga.Text?.Trim()) ? null : TxtLinkDescarga.Text.Trim(),
                         image_url = string.IsNullOrWhiteSpace(TxtImageUrl.Text?.Trim()) ? null : TxtImageUrl.Text.Trim()
                     };
-                    await AppState.Db.CreateGameAsync(juego);
+                    await _gameRepo.CreateGameAsync(juego);
                     LblStatus.Text = $"✓ Juego «{nombre}» creado correctamente";
                 }
 
@@ -161,12 +161,6 @@ namespace PS2Desktop.Vistas
                 else
                     items = new List<JsonElement> { JsonSerializer.Deserialize<JsonElement>(json) };
 
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
                 int ok = 0, err = 0;
                 foreach (var item in items)
                 {
@@ -199,7 +193,7 @@ namespace PS2Desktop.Vistas
                                 link_descarga = item.TryGetProperty("link_descarga", out var l) ? l.GetString() : null,
                                 image_url = item.TryGetProperty("image_url", out var i) ? i.GetString() : null
                             };
-                            await AppState.Db.CreateGameAsync(juego);
+                            await _gameRepo.CreateGameAsync(juego);
                         }
                         else
                         {
@@ -216,7 +210,7 @@ namespace PS2Desktop.Vistas
                                 link_descarga = item.TryGetProperty("link_descarga", out var l) ? l.GetString() : null,
                                 image_url = item.TryGetProperty("image_url", out var i) ? i.GetString() : null
                             };
-                            await AppState.Db.CreateThemeAsync(tema);
+                            await _themeRepo.CreateThemeAsync(tema);
                         }
                         ok++;
                     }
@@ -247,14 +241,8 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
-                var temas = await AppState.Db.GetThemesAsync();
-                var juegos = await AppState.Db.GetGamesAsync();
+                var temas = await _themeRepo.GetThemesAsync();
+                var juegos = await _gameRepo.GetGamesAsync();
 
                 var all = new ObservableCollection<ItemEntry>();
                 foreach (var t in temas)
@@ -284,14 +272,8 @@ namespace PS2Desktop.Vistas
 
                 try
                 {
-                    if (AppState.Db == null)
-                    {
-                        AppState.Db = await PostgresService.FromAppSettingsAsync();
-                        await AppState.Db.InitializeAsync();
-                    }
-
-                    await AppState.Db.DeleteThemeAsync(id);
-                    await AppState.Db.DeleteGameAsync(id);
+                    await _themeRepo.DeleteThemeAsync(id);
+                    await _gameRepo.DeleteGameAsync(id);
                     BtnLoadItems_Click(null, null);
                 }
                 catch (Exception ex)
@@ -324,12 +306,6 @@ namespace PS2Desktop.Vistas
                 else
                     items = new List<JsonElement> { JsonSerializer.Deserialize<JsonElement>(json) };
 
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
                 int ok = 0, err = 0;
                 foreach (var item in items)
                 {
@@ -344,7 +320,7 @@ namespace PS2Desktop.Vistas
 
                         if (!string.IsNullOrEmpty(imageUrl))
                         {
-                            await AppState.Db.CreateAvatarAsync(nombre, imageUrl);
+                            await _avatarRepo.CreateAvatarAsync(nombre, imageUrl);
                             ok++;
                         }
                         else

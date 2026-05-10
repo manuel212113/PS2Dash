@@ -1,4 +1,5 @@
 using LibVLCSharp.Shared;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
 using PS2Desktop.Modelos;
 using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop.Vistas
 {
@@ -23,6 +25,8 @@ namespace PS2Desktop.Vistas
         private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
         private bool _isDraggingSlider;
         private readonly YoutubeClient _youtubeClient = new();
+        private readonly IVoteRepository _voteRepo;
+        private readonly ISessionService _session;
         private Game _game;
         private int _userVote;
 
@@ -36,6 +40,9 @@ namespace PS2Desktop.Vistas
         {
             Core.Initialize();
             InitializeComponent();
+
+            _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
 
             _libVLC = new LibVLC();
             _mediaPlayer = new LibVLCSharp.Shared.MediaPlayer(_libVLC);
@@ -62,6 +69,10 @@ namespace PS2Desktop.Vistas
 
             this.Loaded += async (s, e) =>
             {
+                var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.4))
+                { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                BeginAnimation(OpacityProperty, fadeIn);
+
                 MainScrollViewer.Focus();
                 await Task.Delay(300);
                 await CambiarMedia(0);
@@ -120,9 +131,32 @@ namespace PS2Desktop.Vistas
                 SetImageSafe(PosterImage, game.image_url);
 
             // Sidebar
-            btnDownload.Content = string.IsNullOrEmpty(game.link_descarga)
-                ? "No disponible" : "DESCARGAR";
-            btnDownload.IsEnabled = !string.IsNullOrEmpty(game.link_descarga);
+            if (!string.IsNullOrEmpty(game.link_descarga))
+            {
+                btnDownload.Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Children =
+                    {
+                        new TextBlock { Text = "⬇", FontSize = 16, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
+                        new TextBlock { Text = "DESCARGAR", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
+                    }
+                };
+                btnDownload.IsEnabled = true;
+            }
+            else
+            {
+                btnDownload.Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Children =
+                    {
+                        new TextBlock { Text = "✕", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
+                        new TextBlock { Text = "No disponible", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
+                    }
+                };
+                btnDownload.IsEnabled = false;
+            }
 
             // Rating
             _ = CargarRatingAsync(game.id);
@@ -177,7 +211,7 @@ namespace PS2Desktop.Vistas
         {
             try
             {
-                var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(gameId, "game");
+                var (avg, cnt) = await _voteRepo.GetAverageRatingAsync(gameId, "game");
                 if (cnt > 0)
                 {
                     RatingPanel.Visibility = Visibility.Visible;
@@ -406,8 +440,9 @@ namespace PS2Desktop.Vistas
                     }
                 };
 
+                btn.Tag = idx.ToString();
                 btn.MouseLeave += (s, e) => MostrarEstrellas(_userVote);
-                btn.Click += (s, e) => { _userVote = idx; MostrarEstrellas(idx); Vote_Click(s, e); };
+                btn.Click += (s, e) => { _userVote = idx; MostrarEstrellas(idx); _ = EnviarVotoAsync(idx); };
             }
         }
 
@@ -426,62 +461,80 @@ namespace PS2Desktop.Vistas
 
         private async void Vote_Click(object sender, RoutedEventArgs e)
         {
-            if (AppState.CurrentUser == null)
+            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
+                await EnviarVotoAsync(val);
+        }
+
+        private async Task EnviarVotoAsync(int valor)
+        {
+            if (!_session.IsLoggedIn)
             {
-                var win = new Window
-                {
-                    Title = "Iniciar sesión",
-                    Width = 820,
-                    Height = 480,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                    Owner = Window.GetWindow(this),
-                    Content = new LoginView()
-                };
-                win.ShowDialog();
-                if (AppState.CurrentUser == null)
-                {
-                    MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
+            if (_game == null) return;
+            try
             {
-                if (_game == null) return;
-                try
+                bool ok = await _voteRepo.VoteAsync(_game.id, "game",
+                    _session.CurrentUser!.id, valor);
+                if (ok)
                 {
-                    bool ok = await AppState.Db.VoteAsync(_game.id, "game",
-                        AppState.CurrentUser.id, val);
-                    if (ok)
-                    {
-                        var (avg, cnt) = await AppState.Db.GetAverageRatingAsync(
-                            _game.id, "game");
-                        txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
-                    }
+                    var (avg, cnt) = await _voteRepo.GetAverageRatingAsync(
+                        _game.id, "game");
+                    txtRatingInfo.Text = $"Media: {avg:F2} ({cnt} votos)";
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error voting: " + ex.Message);
-                    MessageBox.Show("No se pudo registrar el voto.", "Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error voting: " + ex.Message);
+                MessageBox.Show("No se pudo registrar el voto.", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void btnDownload_Click(object sender, RoutedEventArgs e)
+        private async void btnDownload_Click(object sender, RoutedEventArgs e)
         {
-            if (_game != null && !string.IsNullOrWhiteSpace(_game.link_descarga))
+            if (_game == null || string.IsNullOrWhiteSpace(_game.link_descarga)) return;
+
+            var originalContent = btnDownload.Content;
+            btnDownload.IsEnabled = false;
+            btnDownload.Content = new StackPanel
             {
-                try
+                Orientation = Orientation.Horizontal,
+                Children =
                 {
-                    Process.Start(new ProcessStartInfo(_game.link_descarga)
-                    { UseShellExecute = true });
+                    new TextBlock { Text = "⏳", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
+                    new TextBlock { Text = "Abriendo...", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
                 }
-                catch (Exception ex)
+            };
+
+            await Task.Delay(300);
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(_game.link_descarga)
+                { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error opening link: " + ex.Message);
+                btnDownload.Content = new StackPanel
                 {
-                    Debug.WriteLine("Error opening link: " + ex.Message);
-                }
+                    Orientation = Orientation.Horizontal,
+                    Children =
+                    {
+                        new TextBlock { Text = "⚠", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
+                        new TextBlock { Text = "Error", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
+                    }
+                };
+                await Task.Delay(1500);
+            }
+            finally
+            {
+                btnDownload.Content = originalContent;
+                btnDownload.IsEnabled = true;
             }
         }
 

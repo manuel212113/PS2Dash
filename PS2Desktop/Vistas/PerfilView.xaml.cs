@@ -1,6 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,11 +9,15 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop.Vistas
 {
     public partial class PerfilView : Window
     {
+        private readonly ISessionService _session;
+        private readonly IAvatarRepository _avatarRepo;
+        private readonly IUserRepository _userRepo;
         private string _selectedAvatarUrl;
         private string _originalAvatarUrl;
 
@@ -21,12 +25,15 @@ namespace PS2Desktop.Vistas
         {
             InitializeComponent();
             Owner = App.Current.MainWindow;
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
+            _avatarRepo = App.ServiceProvider.GetRequiredService<IAvatarRepository>();
+            _userRepo = App.ServiceProvider.GetRequiredService<IUserRepository>();
             Loaded += PerfilView_Loaded;
         }
 
         private async void PerfilView_Loaded(object sender, RoutedEventArgs e)
         {
-            var user = AppState.CurrentUser;
+            var user = _session.CurrentUser;
             if (user == null) return;
 
             LblUserName.Text = user.display_name ?? user.email;
@@ -59,13 +66,7 @@ namespace PS2Desktop.Vistas
         {
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
-                var avatars = await AppState.Db.GetAvatarsAsync();
+                var avatars = await _avatarRepo.GetAvatarsAsync();
                 var items = new ObservableCollection<AvatarItem>();
                 foreach (var (id, name, url) in avatars)
                     items.Add(new AvatarItem { Id = id, Nombre = name, ImageUrl = url });
@@ -193,14 +194,9 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
-                await AppState.Db.UpdateUserAvatarAsync(AppState.CurrentUser.id, _selectedAvatarUrl);
-                AppState.CurrentUser.avatar_url = _selectedAvatarUrl;
+                var user = _session.CurrentUser;
+                await _userRepo.UpdateUserAvatarAsync(user.id, _selectedAvatarUrl);
+                user.avatar_url = _selectedAvatarUrl;
                 DialogResult = true;
 
                 // Fade out before closing

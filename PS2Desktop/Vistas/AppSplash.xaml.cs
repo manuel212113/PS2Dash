@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -24,6 +25,13 @@ namespace PS2Desktop.Vistas
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            var videoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Videos", "splash.mp4");
+            if (!File.Exists(videoPath))
+            {
+                SplashVideo.Visibility = Visibility.Collapsed;
+                VideoFallback.Visibility = Visibility.Visible;
+            }
+
             var anim = new DoubleAnimation
             {
                 From = 0,
@@ -42,7 +50,6 @@ namespace PS2Desktop.Vistas
             {
                 closeTimer.Stop();
                 _timer.Stop();
-                SplashVideo.Stop();
                 var main = new MainWindow();
                 main.Show();
                 Close();
@@ -50,15 +57,10 @@ namespace PS2Desktop.Vistas
             closeTimer.Start();
         }
 
-        private void SplashVideo_MediaOpened(object sender, RoutedEventArgs e)
+        private void SplashVideo_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
-            SplashVideo.Play();
-        }
-
-        private void SplashVideo_MediaEnded(object sender, RoutedEventArgs e)
-        {
-            SplashVideo.Position = TimeSpan.Zero;
-            SplashVideo.Play();
+            SplashVideo.Visibility = Visibility.Collapsed;
+            VideoFallback.Visibility = Visibility.Visible;
         }
 
         private void BtnMute_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

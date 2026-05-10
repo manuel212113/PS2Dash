@@ -4,7 +4,7 @@
         Title="PS2 Dash" Height="500" Width="680"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None" ResizeMode="NoResize"
-        Background="Transparent" AllowsTransparency="True"
+        Background="#121212"
         Loaded="Window_Loaded">
 
     <Grid>
@@ -86,11 +86,23 @@
                 <!-- ===== RIGHT PANEL (Video 360) ===== -->
                 <Border Grid.Column="1" Background="#121212" CornerRadius="0,24,24,0" ClipToBounds="True">
                     <Grid>
-                        <MediaElement x:Name="SplashVideo" Source="Videos/splash.mp4"
+                        <MediaElement x:Name="SplashVideo"
+                                      Source="Videos/splash.mp4"
                                       Stretch="UniformToFill"
-                                      LoadedBehavior="Manual" UnloadedBehavior="Stop"
-                                      MediaOpened="SplashVideo_MediaOpened"
-                                      MediaEnded="SplashVideo_MediaEnded"/>
+                                      LoadedBehavior="Play" UnloadedBehavior="Stop"
+                                      MediaFailed="SplashVideo_MediaFailed"/>
+                        <!-- Fallback when video is missing -->
+                        <Border x:Name="VideoFallback" Visibility="Collapsed"
+                                Background="#121212">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="PS2" Foreground="#0055CC" FontSize="48" FontWeight="Bold"
+                                           FontFamily="{StaticResource GoogleSans}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Dash" Foreground="White" FontSize="24" FontWeight="SemiBold"
+                                           FontFamily="{StaticResource GoogleSans}" HorizontalAlignment="Center" Opacity="0.7"/>
+                                <TextBlock Text="Video no disponible" Foreground="#5A6A78" FontSize="11"
+                                           FontFamily="{StaticResource GoogleSans}" HorizontalAlignment="Center" Margin="0,20,0,0"/>
+                            </StackPanel>
+                        </Border>
                         <Border x:Name="BtnMute" Width="32" Height="32" Cursor="Hand"
                                 Background="#80000000" CornerRadius="16"
                                 HorizontalAlignment="Right" VerticalAlignment="Top"

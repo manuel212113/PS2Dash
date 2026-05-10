@@ -1,8 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
 using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
+using PS2Desktop.ViewModels;
 using System;
-using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,46 +14,28 @@ namespace PS2Desktop.Vistas
     {
         public event EventHandler LoggedIn;
 
+        private readonly IUserRepository _userRepo;
+        private readonly ISessionService _session;
+        private readonly IGoogleAuthService _googleAuth;
         private bool _isPasswordVisible;
-        private bool _rememberChecked;
 
         public LoginView()
         {
             InitializeComponent();
+
+            _userRepo = App.ServiceProvider.GetRequiredService<IUserRepository>();
+            _session = App.ServiceProvider.GetRequiredService<ISessionService>();
+            _googleAuth = App.ServiceProvider.GetRequiredService<IGoogleAuthService>();
+
             this.Loaded += LoginView_Loaded;
         }
 
-        private async void LoginView_Loaded(object sender, RoutedEventArgs e)
+        private void LoginView_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (AppState.Db == null)
-                {
-                    AppState.Db = await PostgresService.FromAppSettingsAsync();
-                    await AppState.Db.InitializeAsync();
-                }
-
-                // Configure Google OAuth from appsettings.json
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
-                if (File.Exists(path))
-                {
-                    var json = JsonDocument.Parse(File.ReadAllText(path));
-                    var google = json.RootElement.TryGetProperty("GoogleOAuth", out var o)
-                        ? o : default;
-                    if (google.ValueKind == JsonValueKind.Object)
-                    {
-                        var clientId = google.TryGetProperty("ClientId", out var cid)
-                            ? cid.GetString() : null;
-                        var clientSecret = google.TryGetProperty("ClientSecret", out var cs)
-                            ? cs.GetString() : null;
-
-                        if (!string.IsNullOrEmpty(clientId) && !string.IsNullOrEmpty(clientSecret)
-                            && clientId != "REEMPLAZA_CON_TU_CLIENT_ID")
-                        {
-                            GoogleAuthService.Configure(clientId, clientSecret);
-                        }
-                    }
-                }
+                var settings = App.ServiceProvider.GetRequiredService<GoogleAuthSettingsLoader>();
+                settings.LoadInto(GoogleAuthServiceWrapper.Configure);
             }
             catch (Exception ex)
             {
@@ -81,10 +63,10 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                var user = await AppState.Db.AuthenticateUserAsync(email, pass);
+                var user = await _userRepo.AuthenticateUserAsync(email, pass);
                 if (user != null)
                 {
-                    AppState.CurrentUser = user;
+                    _session.CurrentUser = user;
                     SetStatus("Sesión iniciada correctamente.", Brushes.YellowGreen);
                     LoggedIn?.Invoke(this, EventArgs.Empty);
                 }
@@ -125,10 +107,10 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                var user = await AppState.Db.CreateUserAsync(email, pass);
+                var user = await _userRepo.CreateUserAsync(email, pass);
                 if (user != null)
                 {
-                    AppState.CurrentUser = user;
+                    _session.CurrentUser = user;
                     SetStatus("Registro completado.", Brushes.YellowGreen);
                     LoggedIn?.Invoke(this, EventArgs.Empty);
                 }
@@ -147,7 +129,7 @@ namespace PS2Desktop.Vistas
 
         private async void BtnGoogle_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (!GoogleAuthService.IsConfigured)
+            if (!_googleAuth.IsConfigured)
             {
                 SetStatus(
                     "Google OAuth no está configurado. Revisa appsettings.json con tus credenciales.",
@@ -162,17 +144,13 @@ namespace PS2Desktop.Vistas
 
             try
             {
-                var googleUser = await GoogleAuthService.LoginAsync();
-
-                var user = await AppState.Db.FindOrCreateUserWithGoogleAsync(
-                    googleUser.GoogleId,
-                    googleUser.Email,
-                    googleUser.Name,
-                    googleUser.AvatarUrl);
+                var googleUser = await _googleAuth.LoginAsync();
+                var user = await _userRepo.FindOrCreateUserWithGoogleAsync(
+                    googleUser.GoogleId, googleUser.Email, googleUser.Name, googleUser.AvatarUrl);
 
                 if (user != null)
                 {
-                    AppState.CurrentUser = user;
+                    _session.CurrentUser = user;
                     SetStatus("Sesión iniciada con Google.", Brushes.YellowGreen);
                     LoggedIn?.Invoke(this, EventArgs.Empty);
                 }
@@ -199,7 +177,6 @@ namespace PS2Desktop.Vistas
         private void BtnTogglePassword_MouseDown(object sender, MouseButtonEventArgs e)
         {
             _isPasswordVisible = !_isPasswordVisible;
-
             if (_isPasswordVisible)
             {
                 txtPasswordVisible.Text = txtPassword.Password;
@@ -218,8 +195,8 @@ namespace PS2Desktop.Vistas
 
         private void BtnRemember_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            _rememberChecked = !_rememberChecked;
-            CheckMark.Visibility = _rememberChecked ? Visibility.Visible : Visibility.Collapsed;
+            var chk = CheckMark.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            CheckMark.Visibility = chk;
         }
 
         private void BtnForgotPassword_Click(object sender, RoutedEventArgs e)
