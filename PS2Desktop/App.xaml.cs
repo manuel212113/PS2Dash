@@ -27,12 +27,14 @@ namespace PS2Desktop
             services.AddSingleton<IGameRepository, GameRepository>();
             services.AddSingleton<IAvatarRepository, AvatarRepository>();
             services.AddSingleton<IVoteRepository, VoteRepository>();
+            services.AddSingleton<IDownloadRepository, DownloadRepository>();
 
             // Services
             services.AddSingleton<ISessionService, SessionService>();
             services.AddSingleton<IGoogleAuthService, GoogleAuthServiceWrapper>();
             services.AddSingleton<ISoundService, SoundServiceWrapper>();
             services.AddSingleton<GoogleAuthSettingsLoader>();
+            services.AddSingleton<MediaFireService>();
 
             // ViewModels
             services.AddTransient<LoginViewModel>();

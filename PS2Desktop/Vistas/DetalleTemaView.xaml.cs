@@ -440,6 +440,8 @@ namespace PS2Desktop.Vistas
             _mediaPlayer?.Stop();
             _mediaPlayer?.Dispose();
             _libVLC?.Dispose();
+            _mediaPlayer = null;
+            _libVLC = null;
         }
 
         // Aplicar un Theme al detalle

@@ -37,8 +37,15 @@ namespace PS2Desktop
 
         // --- MÉTODOS DE NAVEGACIÓN ---
 
+        private void DisposeCurrentContent()
+        {
+            if (MainContentFrame.Content is IDisposable d)
+                d.Dispose();
+        }
+
         private void MostrarLogin(Action onSuccess)
         {
+            DisposeCurrentContent();
             var loginView = new LoginView();
             loginView.LoggedIn += (s, e) =>
             {
@@ -72,6 +79,7 @@ namespace PS2Desktop
         /// </summary>
         private void CargarTemaView()
         {
+            DisposeCurrentContent();
             _currentTemaView = new TemaView();
             _currentTemaView.IrADetalle += (s, tema) =>
             {
@@ -90,6 +98,7 @@ namespace PS2Desktop
         /// </summary>
         private void CargarHomeView()
         {
+            DisposeCurrentContent();
             var homeView = new HomeView();
             homeView.NavigateToTemas += (s, e) => CargarTemaView();
             homeView.NavigateToJuegos += (s, e) => CargarJuegosView();
@@ -99,7 +108,7 @@ namespace PS2Desktop
         private void ResaltarBotonActivo(Button activo)
         {
             SoundService.PlayClick();
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear };
 
             foreach (var btn in buttons)
             {
@@ -141,6 +150,7 @@ namespace PS2Desktop
 
         private void CargarJuegosView()
         {
+            DisposeCurrentContent();
             var view = new JuegosView();
             view.IrADetalle += (s, juego) =>
             {
@@ -159,6 +169,19 @@ namespace PS2Desktop
         {
             if (!VerificarLogin()) { MostrarLogin(CargarJuegosView); return; }
             CargarJuegosView();
+        }
+
+        public void CargarDescargasView()
+        {
+            DisposeCurrentContent();
+            MainContentFrame.Content = new DescargasView();
+            ResaltarBotonActivo(BtnDescargas);
+        }
+
+        private void BtnDescargas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!VerificarLogin()) { MostrarLogin(CargarDescargasView); return; }
+            CargarDescargasView();
         }
 
         private void BtnCrear_Click(object sender, RoutedEventArgs e)
@@ -183,7 +206,7 @@ namespace PS2Desktop
             LogoutText.Visibility = Visibility.Collapsed;
             ProfileName.Text = "Usuario";
             AvatarImage.Source = null;
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear };
             foreach (var btn in buttons)
             {
                 btn.Background = Brushes.Transparent;

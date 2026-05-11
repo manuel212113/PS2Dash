@@ -50,6 +50,15 @@
                                 </StackPanel>
                             </Button>
 
+                            <Button x:Name="BtnDescargas" Style="{StaticResource MenuButtonStyle}" Click="BtnDescargas_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M21 3H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H3V8h18v11Zm-9-6 4-4h-3V6h-2v3H8l4 4Z" 
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
+                                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,15,0"/>
+                                    <TextBlock Text="Descargas" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+
                             <Button x:Name="BtnCrear" Style="{StaticResource MenuButtonStyle}" Click="BtnCrear_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" 

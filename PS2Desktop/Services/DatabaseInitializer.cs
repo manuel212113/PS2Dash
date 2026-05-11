@@ -92,6 +92,19 @@ ALTER TABLE public.games ADD COLUMN IF NOT EXISTS media_type text;
 ALTER TABLE public.games ADD COLUMN IF NOT EXISTS jugadores text;
 ALTER TABLE public.games ADD COLUMN IF NOT EXISTS resolucion text;
 ALTER TABLE public.games ADD COLUMN IF NOT EXISTS widescreen boolean default false;
+
+CREATE TABLE IF NOT EXISTS public.download_links (
+    id uuid PRIMARY KEY,
+    game_id uuid REFERENCES public.games(id) ON DELETE CASCADE,
+    url text NOT NULL,
+    direct_url text,
+    file_name text,
+    file_size bigint,
+    status text DEFAULT 'pending',
+    created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.download_links ADD COLUMN IF NOT EXISTS image_url text;
 ";
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();

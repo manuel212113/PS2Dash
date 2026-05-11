@@ -1,8 +1,13 @@
 using LibVLCSharp.Shared;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Win32;
+using PS2Desktop.Modelos;
+using PS2Desktop.Services;
+using PS2Desktop.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,9 +18,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
-using PS2Desktop.Modelos;
-using PS2Desktop.Services;
-using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop.Vistas
 {
@@ -27,6 +29,8 @@ namespace PS2Desktop.Vistas
         private readonly YoutubeClient _youtubeClient = new();
         private readonly IVoteRepository _voteRepo;
         private readonly ISessionService _session;
+        private readonly MediaFireService _mediaFire;
+        private readonly IDownloadRepository _downloadRepo;
         private Game _game;
         private int _userVote;
 
@@ -43,6 +47,8 @@ namespace PS2Desktop.Vistas
 
             _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
+            _mediaFire = App.ServiceProvider.GetRequiredService<MediaFireService>();
+            _downloadRepo = App.ServiceProvider.GetRequiredService<IDownloadRepository>();
 
             _libVLC = new LibVLC();
             _mediaPlayer = new LibVLCSharp.Shared.MediaPlayer(_libVLC);
@@ -506,20 +512,52 @@ namespace PS2Desktop.Vistas
                 Children =
                 {
                     new TextBlock { Text = "⏳", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
-                    new TextBlock { Text = "Abriendo...", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
+                    new TextBlock { Text = "Resolviendo...", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
                 }
             };
 
-            await Task.Delay(300);
-
             try
             {
-                Process.Start(new ProcessStartInfo(_game.link_descarga)
-                { UseShellExecute = true });
+                var (directUrl, fileName, fileSize) = await _mediaFire.ResolveAsync(_game.link_descarga);
+
+                if (string.IsNullOrEmpty(directUrl))
+                {
+                    MessageBox.Show("No se pudo resolver el enlace de descarga.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var saveDialog = new SaveFileDialog
+                {
+                    FileName = fileName ?? $"{_game.nombre ?? "juego"}.rar",
+                    Filter = "Todos los archivos|*.*"
+                };
+
+                if (saveDialog.ShowDialog() != true) return;
+
+                var savedName = Path.GetFileName(saveDialog.FileName);
+                var item = new DownloadItem
+                {
+                    Id = Guid.NewGuid(),
+                    GameId = _game.id,
+                    Url = _game.link_descarga,
+                    DirectUrl = directUrl,
+                    FileName = savedName,
+                    FileSize = fileSize,
+                    Status = "ready",
+                    ImageUrl = _game.image_url
+                };
+
+                await _downloadRepo.CreateAsync(item);
+
+                DescargasView.SetPendingDownload(item.Id, saveDialog.FileName);
+
+                var mainWindow = Window.GetWindow(this) as MainWindow;
+                mainWindow?.CargarDescargasView();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error opening link: " + ex.Message);
+                Debug.WriteLine("Error en descarga: " + ex.Message);
                 btnDownload.Content = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
@@ -529,6 +567,8 @@ namespace PS2Desktop.Vistas
                         new TextBlock { Text = "Error", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
                     }
                 };
+                MessageBox.Show("Error al iniciar descarga: " + ex.Message, "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
                 await Task.Delay(1500);
             }
             finally
@@ -543,6 +583,8 @@ namespace PS2Desktop.Vistas
             _mediaPlayer?.Stop();
             _mediaPlayer?.Dispose();
             _libVLC?.Dispose();
+            _mediaPlayer = null;
+            _libVLC = null;
         }
     }
 }
