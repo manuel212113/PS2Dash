@@ -105,6 +105,19 @@ CREATE TABLE IF NOT EXISTS public.download_links (
 );
 
 ALTER TABLE public.download_links ADD COLUMN IF NOT EXISTS image_url text;
+ALTER TABLE public.download_links ADD COLUMN IF NOT EXISTS save_path text;
+
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    id integer PRIMARY KEY,
+    game_card_width double precision DEFAULT 230,
+    game_card_height double precision DEFAULT 350,
+    theme_card_width double precision DEFAULT 230,
+    theme_card_height double precision DEFAULT 300,
+    is_light_mode boolean DEFAULT false
+);
+INSERT INTO public.app_settings (id, game_card_width, game_card_height, theme_card_width, theme_card_height, is_light_mode)
+VALUES (1, 230, 350, 230, 300, false)
+ON CONFLICT (id) DO NOTHING;
 ";
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();

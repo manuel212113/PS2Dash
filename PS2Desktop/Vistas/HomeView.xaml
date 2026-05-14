@@ -108,20 +108,20 @@
                     <StackPanel VerticalAlignment="Center" Margin="40,0">
                         <!-- Logo + Title -->
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="56" Height="56" CornerRadius="14" Background="#1A2238" Margin="0,0,18,0">
+                            <Border Width="56" Height="56" CornerRadius="14" Background="{DynamicResource CardAltBrush}" Margin="0,0,18,0">
                                 <Image Source="/Imagenes/logops2app.png" Stretch="Uniform" Margin="8"/>
                             </Border>
                             <StackPanel>
-                                <TextBlock Text="PS2 Demo Downloader" Foreground="White" FontSize="32" FontWeight="Bold"/>
-                                <TextBlock Text="Descarga y gestiona las mejores demos y temas para tu PS2" 
-                                           Foreground="#CCFFFFFF" FontSize="14" Margin="0,4,0,0"/>
+                                <TextBlock Text="PS2 Demo Downloader" Foreground="{DynamicResource TextMainBrush}" FontSize="32" FontWeight="Bold"/>
+                                <TextBlock Text="Descarga y gestiona las mejores demos y temas para tu PS2"
+                                           Foreground="{DynamicResource TextSecundarioBrush}" FontSize="14" Margin="0,4,0,0"/>
                             </StackPanel>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
                             <Button x:Name="BtnExplorarDemos" Content="Explorar Demos" Width="160" Cursor="Hand"
-                                    Background="#1A2238" Foreground="White" Height="40" FontWeight="SemiBold"
-                                    BorderThickness="1" BorderBrush="#2A3A58">
+                                    Background="{DynamicResource CardAltBrush}" Foreground="{DynamicResource TextMainBrush}" Height="40" FontWeight="SemiBold"
+                                    BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8"
@@ -130,16 +130,16 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="#2A3A58"/>
-                                                <Setter TargetName="border" Property="BorderBrush" Value="#3A5A88"/>
+                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
                                 </Button.Template>
                             </Button>
                             <Button x:Name="BtnVerTemas" Content="Ver Temas" Margin="12,0,0,0"
-                                    Background="#1A2238" Foreground="White" Height="40" Width="130" Cursor="Hand"
-                                    BorderThickness="1" BorderBrush="#2A3A58">
+                                    Background="{DynamicResource CardAltBrush}" Foreground="{DynamicResource TextMainBrush}" Height="40" Width="130" Cursor="Hand"
+                                    BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}">
                                 <Button.Template>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8"
@@ -148,8 +148,8 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="border" Property="Background" Value="#2A3A58"/>
-                                                <Setter TargetName="border" Property="BorderBrush" Value="#3A5A88"/>
+                                                <Setter TargetName="border" Property="Background" Value="{DynamicResource CardBrush}"/>
+                                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -174,21 +174,21 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Stat 1 -->
-                <Border x:Name="StatCard1" Grid.Column="0" Margin="0,0,8,0" CornerRadius="16" Background="#131A30" Padding="20,18"
+                <Border x:Name="StatCard1" Grid.Column="0" Margin="0,0,8,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Padding="20,18"
                         RenderTransformOrigin="0.5,0.5">
                     <Border.RenderTransform>
                         <TranslateTransform/>
                     </Border.RenderTransform>
                     <StackPanel>
                         <Path Data="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V17h14v-1.5c0-2.33-4.67-3.5-7-3.5z"
-                              Fill="#0055CC" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatDemos" Text="0" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
-                        <TextBlock Text="Demos Disponibles" Foreground="#888E9E" FontSize="12"/>
+                              Fill="{DynamicResource AccentDarkBrush}" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
+                        <TextBlock x:Name="StatDemos" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <TextBlock Text="Demos Disponibles" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Stat 2 -->
-                <Border x:Name="StatCard2" Grid.Column="1" Margin="8,0" CornerRadius="16" Background="#131A30" Padding="20,18"
+                <Border x:Name="StatCard2" Grid.Column="1" Margin="8,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Padding="20,18"
                         RenderTransformOrigin="0.5,0.5">
                     <Border.RenderTransform>
                         <TranslateTransform/>
@@ -196,27 +196,27 @@
                     <StackPanel>
                         <Path Data="M17.5,8A1.5,1.5 0 1,1 16,9.5A1.5,1.5 0 0,1 17.5,8 M12.5,5A1.5,1.5 0 1,1 11,6.5A1.5,1.5 0 0,1 12.5,5 M7.5,8A1.5,1.5 0 1,1 6,9.5A1.5,1.5 0 0,1 7.5,8 M7.5,14A1.5,1.5 0 1,1 6,15.5A1.5,1.5 0 0,1 7.5,14 M12.083 24A12 12 0 0 1 3.745 3.371 11.885 11.885 0 0 1 12.5.007 12.155 12.155 0 0 1 24.08 11.7a11.924 11.924 0 0 1-.775 4.552 1.888 1.888 0 0 1-1.377 1.177 1.912 1.912 0 0 1-1.769-.521l-.1-.1a3.567 3.567 0 0 0-6.089 2.553l.04 4.516-.924.077C12.753 23.978 12.421 24 12.083 24Z"
                               Fill="#00B4D8" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatTemas" Text="0" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
-                        <TextBlock Text="Temas OPL" Foreground="#888E9E" FontSize="12"/>
+                        <TextBlock x:Name="StatTemas" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <TextBlock Text="Temas OPL" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Stat 3 -->
-                <Border x:Name="StatCard3" Grid.Column="2" Margin="8,0" CornerRadius="16" Background="#131A30" Padding="20,18"
+                <Border x:Name="StatCard3" Grid.Column="2" Margin="8,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Padding="20,18"
                         RenderTransformOrigin="0.5,0.5">
                     <Border.RenderTransform>
                         <TranslateTransform/>
                     </Border.RenderTransform>
                     <StackPanel>
                         <Path Data="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                               Fill="#8890A0" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatRating" Text="0.0" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
-                        <TextBlock Text="Valoración Media" Foreground="#888E9E" FontSize="12"/>
+                               Fill="{DynamicResource TextSecundarioBrush}" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
+                        <TextBlock x:Name="StatRating" Text="0.0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <TextBlock Text="Valoración Media" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
 
                 <!-- Stat 4 -->
-                <Border x:Name="StatCard4" Grid.Column="3" Margin="8,0,0,0" CornerRadius="16" Background="#131A30" Padding="20,18"
+                <Border x:Name="StatCard4" Grid.Column="3" Margin="8,0,0,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Padding="20,18"
                         RenderTransformOrigin="0.5,0.5">
                     <Border.RenderTransform>
                         <TranslateTransform/>
@@ -224,8 +224,8 @@
                     <StackPanel>
                         <Path Data="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V17h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V17h6v-1.5c0-2.33-4.67-3.5-7-3.5z"
                               Fill="#00E676" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatUsers" Text="0" Foreground="White" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
-                        <TextBlock Text="Usuarios" Foreground="#888E9E" FontSize="12"/>
+                        <TextBlock x:Name="StatUsers" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <TextBlock Text="Usuarios" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -233,9 +233,9 @@
             <!-- ==================== ÚLTIMAS DEMOS ==================== -->
             <StackPanel Margin="0,35,0,0">
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
-                    <TextBlock Text="Últimas Demos" Foreground="White" FontSize="22" FontWeight="Bold"/>
+                    <TextBlock Text="Últimas Demos" Foreground="{DynamicResource TextMainBrush}" FontSize="22" FontWeight="Bold"/>
                     <Path Data="M10,6L8.59,7.41L13.17,12l-4.58,4.59L10,18l6-6L10,6z"
-                          Fill="#888E9E" Stretch="Uniform" Width="12" Margin="10,8,0,0"/>
+                          Fill="{DynamicResource TextSecundarioBrush}" Stretch="Uniform" Width="12" Margin="10,8,0,0"/>
                 </StackPanel>
 
                 <Grid>
@@ -246,40 +246,40 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Demo card 1 -->
-                    <Border x:Name="DemoCard1" Grid.Column="0" Margin="0,0,10,0" CornerRadius="16" Background="#131A30" Cursor="Hand"
+                    <Border x:Name="DemoCard1" Grid.Column="0" Margin="0,0,10,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Cursor="Hand"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform x:Name="CardScale1" ScaleX="1" ScaleY="1"/>
                         </Border.RenderTransform>
                         <Grid>
-                            <Border Height="180" CornerRadius="16,16,0,0" Background="#1A2238" ClipToBounds="True">
+                            <Border Height="180" CornerRadius="16,16,0,0" Background="{DynamicResource CardAltBrush}" ClipToBounds="True">
                                 <Grid>
                                     <Path Fill="#252D45" Stretch="Uniform" Width="60" Height="60" Opacity="0.4"
                                           Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border Background="#0055CC" CornerRadius="0,12,0,0" 
+                                    <Border Background="{DynamicResource AccentDarkBrush}" CornerRadius="0,12,0,0"
                                             HorizontalAlignment="Left" VerticalAlignment="Top" Padding="10,4">
                                         <TextBlock Text="NUEVO" Foreground="White" FontSize="10" FontWeight="Bold"/>
                                     </Border>
                                 </Grid>
                             </Border>
                             <StackPanel Margin="16,14">
-                                <TextBlock Text="Demo ISO" Foreground="#0055CC" FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock Text="Próximamente" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                                <TextBlock Text="Nueva demo en desarrollo" Foreground="#888E9E" FontSize="12" Margin="0,4,0,0"
+                                <TextBlock Text="Demo ISO" Foreground="{DynamicResource AccentDarkBrush}" FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock Text="Próximamente" Foreground="{DynamicResource TextMainBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                <TextBlock Text="Nueva demo en desarrollo" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12" Margin="0,4,0,0"
                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Demo card 2 -->
-                    <Border x:Name="DemoCard2" Grid.Column="1" Margin="10,0" CornerRadius="16" Background="#131A30" Cursor="Hand"
+                    <Border x:Name="DemoCard2" Grid.Column="1" Margin="10,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Cursor="Hand"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform x:Name="CardScale2" ScaleX="1" ScaleY="1"/>
                         </Border.RenderTransform>
                         <Grid>
-                            <Border Height="180" CornerRadius="16,16,0,0" Background="#1A2238" ClipToBounds="True">
+                            <Border Height="180" CornerRadius="16,16,0,0" Background="{DynamicResource CardAltBrush}" ClipToBounds="True">
                                 <Grid>
                                     <Path Fill="#252D45" Stretch="Uniform" Width="60" Height="60" Opacity="0.4"
                                           Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
@@ -292,35 +292,35 @@
                             </Border>
                             <StackPanel Margin="16,14">
                                 <TextBlock Text="Edición ISO" Foreground="#00B4D8" FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock Text="Próximamente" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                                <TextBlock Text="Demo popular en desarrollo" Foreground="#888E9E" FontSize="12" Margin="0,4,0,0"
+                                <TextBlock Text="Próximamente" Foreground="{DynamicResource TextMainBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                <TextBlock Text="Demo popular en desarrollo" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12" Margin="0,4,0,0"
                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Demo card 3 -->
-                    <Border x:Name="DemoCard3" Grid.Column="2" Margin="10,0,0,0" CornerRadius="16" Background="#131A30" Cursor="Hand"
+                    <Border x:Name="DemoCard3" Grid.Column="2" Margin="10,0,0,0" CornerRadius="16" Background="{DynamicResource CardLightBrush}" Cursor="Hand"
                             RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <ScaleTransform x:Name="CardScale3" ScaleX="1" ScaleY="1"/>
                         </Border.RenderTransform>
                         <Grid>
-                            <Border Height="180" CornerRadius="16,16,0,0" Background="#1A2238" ClipToBounds="True">
+                            <Border Height="180" CornerRadius="16,16,0,0" Background="{DynamicResource CardAltBrush}" ClipToBounds="True">
                                 <Grid>
                                     <Path Fill="#252D45" Stretch="Uniform" Width="60" Height="60" Opacity="0.4"
                                           Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Border Background="#2A2F42" CornerRadius="0,12,0,0"
+                                    <Border Background="{DynamicResource BorderBrush}" CornerRadius="0,12,0,0"
                                             HorizontalAlignment="Left" VerticalAlignment="Top" Padding="10,4">
                                         <TextBlock Text="PRÓXIMO" Foreground="White" FontSize="10" FontWeight="Bold"/>
                                     </Border>
                                 </Grid>
                             </Border>
                             <StackPanel Margin="16,14">
-                                <TextBlock Text="Demo ISO" Foreground="#8890A0" FontSize="11" FontWeight="SemiBold"/>
-                                <TextBlock Text="Próximamente" Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
-                                <TextBlock Text="Nueva demo en camino" Foreground="#888E9E" FontSize="12" Margin="0,4,0,0"
+                                <TextBlock Text="Demo ISO" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="11" FontWeight="SemiBold"/>
+                                <TextBlock Text="Próximamente" Foreground="{DynamicResource TextMainBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,2,0,0"/>
+                                <TextBlock Text="Nueva demo en camino" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12" Margin="0,4,0,0"
                                            TextTrimming="CharacterEllipsis"/>
                             </StackPanel>
                         </Grid>

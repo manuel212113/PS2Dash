@@ -6,9 +6,30 @@
         <SolidColorBrush x:Key="BackgroundBrush" Color="#121212"/>
         <SolidColorBrush x:Key="SidebarBrush" Color="#121212"/>
         <SolidColorBrush x:Key="CardBrush" Color="#202020"/>
+        <SolidColorBrush x:Key="CardAltBrush" Color="#1C2030"/>
+        <SolidColorBrush x:Key="CardLightBrush" Color="#131A30"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#0078F2"/>
+        <SolidColorBrush x:Key="AccentDarkBrush" Color="#0055CC"/>
         <SolidColorBrush x:Key="TextMainBrush" Color="White"/>
         <SolidColorBrush x:Key="TextSecundarioBrush" Color="#888E9E"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#5A6A78"/>
+        <SolidColorBrush x:Key="TextDimBrush" Color="#3A3A4A"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#2A2F42"/>
+        <SolidColorBrush x:Key="InputBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="InputBorderBrush" Color="#252525"/>
+
+        <SolidColorBrush x:Key="LightBackgroundBrush" Color="#F5F5F5"/>
+        <SolidColorBrush x:Key="LightSidebarBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="LightCardBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="LightCardAltBrush" Color="#F0F0F0"/>
+        <SolidColorBrush x:Key="LightCardLightBrush" Color="#E8E8E8"/>
+        <SolidColorBrush x:Key="LightTextMainBrush" Color="#1A1A1A"/>
+        <SolidColorBrush x:Key="LightTextSecundarioBrush" Color="#666666"/>
+        <SolidColorBrush x:Key="LightTextMutedBrush" Color="#888888"/>
+        <SolidColorBrush x:Key="LightTextDimBrush" Color="#BBBBBB"/>
+        <SolidColorBrush x:Key="LightBorderBrush" Color="#DDDDDD"/>
+        <SolidColorBrush x:Key="LightInputBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="LightInputBorderBrush" Color="#CCCCCC"/>
 
         <Style x:Key="MenuButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -41,6 +62,77 @@
             </Setter>
         </Style>
 
+        <Style x:Key="ModernSliderStyle" TargetType="Slider">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Track de fondo -->
+                            <Border x:Name="TrackBackground" 
+                                    Grid.Row="0" 
+                                    Height="8" 
+                                    VerticalAlignment="Center" 
+                                    Background="{DynamicResource InputBrush}"
+                                    CornerRadius="4"/>
+                            
+                            <!-- Track que muestra el progreso (debe ser el PART_Track) -->
+                            <Border x:Name="PART_Track" 
+                                    Grid.Row="0" 
+                                    Height="8" 
+                                    VerticalAlignment="Center" 
+                                    HorizontalAlignment="Left" 
+                                    Background="Transparent"/>
+                            
+                            <!-- Indicator -->
+                            <Border x:Name="PART_Indicator" 
+                                    Grid.Row="0" 
+                                    Height="8" 
+                                    VerticalAlignment="Center" 
+                                    HorizontalAlignment="Left" 
+                                    Background="{DynamicResource AccentBrush}"
+                                    CornerRadius="4"/>
+                            
+                            <!-- Thumb -->
+                            <Thumb x:Name="Thumb" 
+                                   Grid.Row="0"
+                                   Width="22" 
+                                   Height="22" 
+                                   VerticalAlignment="Center"
+                                   Background="White"
+                                   BorderThickness="2"
+                                   BorderBrush="{DynamicResource AccentBrush}"
+                                   Cursor="Hand"
+                                   RenderTransformOrigin="0.5,0.5">
+                                <Thumb.RenderTransform>
+                                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                </Thumb.RenderTransform>
+                            </Thumb>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TrackBackground" Property="Opacity" Value="0.5"/>
+                                <Setter TargetName="PART_Indicator" Property="Opacity" Value="0.5"/>
+                                <Setter TargetName="Thumb" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Thumb" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
         <Style x:Key="ModernProgressStyle" TargetType="ProgressBar">
             <Setter Property="Height" Value="6"/>
             <Setter Property="Background" Value="#252525"/>
@@ -57,6 +149,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <DropShadowEffect x:Key="ModernShadowEffect" 
+                          Color="#000000" 
+                          BlurRadius="15" 
+                          Direction="270" 
+                          ShadowDepth="4" 
+                          Opacity="0.3"/>
 
         <Style x:Key="DownloadButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource AccentBrush}"/>

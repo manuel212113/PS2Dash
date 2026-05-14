@@ -20,11 +20,55 @@ namespace PS2Desktop.Vistas
 
         private readonly IThemeRepository _themeRepo;
         private static readonly HttpClient _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        private List<Border> _tarjetasCreadas = new();
 
         public TemaView()
         {
             InitializeComponent();
             _themeRepo = App.ServiceProvider.GetRequiredService<IThemeRepository>();
+            App.ThemeChanged += OnThemeChanged;
+            this.Unloaded += (s, e) => App.ThemeChanged -= OnThemeChanged;
+        }
+
+        private void OnThemeChanged(bool isLightMode)
+        {
+            foreach (var tarjeta in _tarjetasCreadas)
+            {
+                if (tarjeta.Background is SolidColorBrush brush)
+                {
+                    brush.Color = isLightMode ? Color.FromRgb(0x12, 0x12, 0x12) : Color.FromRgb(0x20, 0x20, 0x20);
+                }
+                if (tarjeta.Child is StackPanel mainSp)
+                {
+                    if (mainSp.Children.Count > 0 && mainSp.Children[0] is Border imgBorder)
+                    {
+                        if (imgBorder.Background is SolidColorBrush imgBrush)
+                        {
+                            imgBrush.Color = isLightMode ? Color.FromRgb(0x1C, 0x20, 0x30) : Color.FromRgb(0x1C, 0x20, 0x30);
+                        }
+                    }
+                    ActualizarColoresStackPanel(mainSp, isLightMode);
+                }
+            }
+        }
+
+        private void ActualizarColoresStackPanel(StackPanel sp, bool isLightMode)
+        {
+            if (sp == null) return;
+            foreach (var child in sp.Children)
+            {
+                if (child is TextBlock tb)
+                {
+                    if (tb.FontWeight == FontWeights.Bold)
+                        tb.Foreground = new SolidColorBrush(isLightMode ? Colors.White : Color.FromRgb(0x1A, 0x1A, 0x1A));
+                    else
+                        tb.Foreground = new SolidColorBrush(isLightMode ? Color.FromRgb(0x88, 0x8E, 0x9E) : Color.FromRgb(0x66, 0x66, 0x66));
+                }
+                else if (child is StackPanel childSp)
+                {
+                    ActualizarColoresStackPanel(childSp, isLightMode);
+                }
+            }
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -118,18 +162,19 @@ namespace PS2Desktop.Vistas
 
         private Border CrearTarjetaTema(Theme tema)
         {
+            var isLight = AppSettings.IsLightMode;
             var border = new Border
             {
-                Width = 240, Margin = new Thickness(0, 0, 20, 30),
-                Background = new SolidColorBrush(Color.FromRgb(18, 18, 18)),
+                Width = AppSettings.ThemeCardWidth, Margin = new Thickness(0, 0, 20, 30),
+                Background = new SolidColorBrush(isLight ? Color.FromRgb(0x12, 0x12, 0x12) : Color.FromRgb(0x20, 0x20, 0x20)),
                 CornerRadius = new CornerRadius(12), Cursor = System.Windows.Input.Cursors.Hand, Tag = tema
             };
             var stackPanel = new StackPanel();
             var imageBorder = new Border
             {
                 CornerRadius = new CornerRadius(5),
-                Background = new SolidColorBrush(Color.FromRgb(28, 32, 48)),
-                Height = 140, ClipToBounds = true
+                Background = new SolidColorBrush(isLight ? Color.FromRgb(0x1C, 0x20, 0x30) : Color.FromRgb(0x1C, 0x20, 0x30)),
+                Height = AppSettings.ThemeCardHeight, ClipToBounds = true
             };
             var image = new Image
             {
@@ -181,6 +226,7 @@ namespace PS2Desktop.Vistas
             stackPanel.Children.Add(innerPanel);
             border.Child = stackPanel;
             border.MouseDown += (s, e) => IrADetalle?.Invoke(this, tema);
+            _tarjetasCreadas.Add(border);
             return border;
         }
 

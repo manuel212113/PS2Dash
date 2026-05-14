@@ -13,5 +13,6 @@ namespace PS2Desktop.Modelos
         public string Status { get; set; } = "pending";
         public DateTime CreatedAt { get; set; }
         public string ImageUrl { get; set; }
+        public string SavePath { get; set; }
     }
 }

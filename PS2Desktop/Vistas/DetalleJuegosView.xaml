@@ -116,25 +116,25 @@
 
             <!-- Title row -->
             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,20">
-                <TextBlock x:Name="lblTitle" Text="Cargando..." Foreground="White" FontSize="42" FontWeight="Bold"/>
+                <TextBlock x:Name="lblTitle" Text="Cargando..." Foreground="{DynamicResource TextMainBrush}" FontSize="42" FontWeight="Bold"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <TextBlock x:Name="lblDeveloper" Foreground="#AAA" FontSize="14"/>
-                    <TextBlock x:Name="lblPublisher" Foreground="#888" FontSize="14" Margin="12,0,0,0"/>
-                    <TextBlock x:Name="lblYear" Foreground="#666" FontSize="14" Margin="12,0,0,0"/>
-                    <Border Background="#0055CC" Padding="6,2" CornerRadius="4" Margin="12,0,0,0">
+                    <TextBlock x:Name="lblDeveloper" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="14"/>
+                    <TextBlock x:Name="lblPublisher" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="14" Margin="12,0,0,0"/>
+                    <TextBlock x:Name="lblYear" Foreground="{DynamicResource TextMutedBrush}" FontSize="14" Margin="12,0,0,0"/>
+                    <Border Background="{DynamicResource AccentDarkBrush}" Padding="6,2" CornerRadius="4" Margin="12,0,0,0">
                         <TextBlock x:Name="lblGameId" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
                     </Border>
-                    <Border Background="#1A2238" Padding="6,2" CornerRadius="4" Margin="6,0,0,0">
-                        <TextBlock x:Name="lblRegion" Foreground="#888" FontSize="12"/>
+                    <Border Background="{DynamicResource CardAltBrush}" Padding="6,2" CornerRadius="4" Margin="6,0,0,0">
+                        <TextBlock x:Name="lblRegion" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </Border>
-                    <Border Background="#1A2238" Padding="6,2" CornerRadius="4" Margin="6,0,0,0">
-                        <TextBlock x:Name="lblMediaType" Foreground="#888" FontSize="12"/>
+                    <Border Background="{DynamicResource CardAltBrush}" Padding="6,2" CornerRadius="4" Margin="6,0,0,0">
+                        <TextBlock x:Name="lblMediaType" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </Border>
                 </StackPanel>
                 <StackPanel x:Name="RatingPanel" Orientation="Horizontal" Margin="0,8,0,0" Visibility="Collapsed">
-                    <TextBlock x:Name="lblStars" Foreground="White" FontSize="16" Margin="0,0,5,0"/>
-                    <TextBlock x:Name="lblRatingValue" Foreground="#00ADFF" FontSize="14" FontWeight="Bold" Margin="8,0,20,0" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="lblRatingCount" Foreground="#AAA" FontSize="14" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="lblStars" Foreground="{DynamicResource TextMainBrush}" FontSize="16" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="lblRatingValue" Foreground="{DynamicResource AccentBrush}" FontSize="14" FontWeight="Bold" Margin="8,0,20,0" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="lblRatingCount" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="14" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
 
@@ -173,7 +173,7 @@
                         </Grid>
                     </Border>
 
-                    <Border x:Name="ControlsPanel" CornerRadius="0,0,20,20" Background="#1C2030"
+                    <Border x:Name="ControlsPanel" CornerRadius="0,0,20,20" Background="{DynamicResource CardAltBrush}"
                             Padding="12,12" Height="68"
                             MouseEnter="ControlsPanel_MouseEnter"
                             MouseMove="ControlsPanel_MouseMove">
@@ -188,14 +188,14 @@
                             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
                                 <Button x:Name="btnPlayPause" Content="{StaticResource IconPlay}"
                                         Width="28" Height="28" Background="Transparent" BorderThickness="0"
-                                        Click="btnPlayPause_Click" Foreground="White"/>
+                                        Click="btnPlayPause_Click" Foreground="{DynamicResource TextMainBrush}"/>
                                 <Button x:Name="btnMute" Content="{StaticResource IconVolOn}"
                                         Width="22" Height="28" Background="Transparent" BorderThickness="0"
-                                        Margin="10,0" Click="btnMute_Click" Foreground="White"/>
-                                <TextBlock x:Name="lblTime" Text="0:00" Foreground="White"
+                                        Margin="10,0" Click="btnMute_Click" Foreground="{DynamicResource TextMainBrush}"/>
+                                <TextBlock x:Name="lblTime" Text="0:00" Foreground="{DynamicResource TextMainBrush}"
                                            VerticalAlignment="Center" FontSize="12"/>
-                                <TextBlock Text=" / " Foreground="Gray" VerticalAlignment="Center" FontSize="12"/>
-                                <TextBlock x:Name="lblTotalTime" Text="0:00" Foreground="Gray"
+                                <TextBlock Text=" / " Foreground="{DynamicResource TextSecundarioBrush}" VerticalAlignment="Center" FontSize="12"/>
+                                <TextBlock x:Name="lblTotalTime" Text="0:00" Foreground="{DynamicResource TextSecundarioBrush}"
                                            VerticalAlignment="Center" FontSize="12"/>
                             </StackPanel>
                         </Grid>
@@ -209,8 +209,8 @@
                                 BorderBrush="#00ADFF" ClipToBounds="True">
                             <Grid>
                                 <Image x:Name="ThumbImg0" Stretch="UniformToFill"/>
-                                <Viewbox Width="24" Height="24" Visibility="{Binding ElementName=ThumbImg0, Path=Opacity, Converter={x:Null}}">
-                                    <Path Fill="White" Data="M8,5.14V19.14L19,12.14L8,5.14Z" Visibility="Collapsed"/>
+                                <Viewbox Width="24" Height="24" Visibility="Collapsed">
+                                    <Path Fill="White" Data="M8,5.14V19.14L19,12.14L8,5.14Z"/>
                                 </Viewbox>
                             </Grid>
                         </Border>
@@ -239,14 +239,14 @@
             <!-- Right sidebar -->
             <StackPanel Grid.Row="1" Grid.Column="1">
                 <!-- Cover poster -->
-                <Border Background="#1C2030" CornerRadius="20" Padding="0" Margin="0,0,0,16" ClipToBounds="True"
+                <Border Background="{DynamicResource CardAltBrush}" CornerRadius="20" Padding="0" Margin="0,0,0,16" ClipToBounds="True"
                         Height="280">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="Background" Value="#1C2030"/>
+                            <Setter Property="Background" Value="{DynamicResource CardAltBrush}"/>
                             <Style.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#252A3A"/>
+                                    <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
@@ -255,16 +255,16 @@
                 </Border>
 
                 <!-- Info cards -->
-                <Border Background="#1C2030" CornerRadius="20" Padding="20">
+                <Border Background="{DynamicResource CardAltBrush}" CornerRadius="20" Padding="20">
                     <StackPanel>
-                        <TextBlock Text="GRATIS" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                        <TextBlock Text="GRATIS" Foreground="{DynamicResource TextMainBrush}" FontSize="24" FontWeight="Bold"/>
                         <Button x:Name="btnDownload" Margin="0,16,0,0" Height="54"
-                                Background="#0055CC" Foreground="White" FontWeight="Bold"
+                                Background="{DynamicResource AccentDarkBrush}" Foreground="White" FontWeight="Bold"
                                 FontSize="14" Cursor="Hand" Click="btnDownload_Click"
                                 BorderThickness="0">
                             <Button.Style>
                                 <Style TargetType="Button">
-                                    <Setter Property="Background" Value="#0055CC"/>
+                                    <Setter Property="Background" Value="{DynamicResource AccentDarkBrush}"/>
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
@@ -282,8 +282,8 @@
                                                         <Setter Property="Background" Value="#0044AA"/>
                                                     </Trigger>
                                                     <Trigger Property="IsEnabled" Value="False">
-                                                        <Setter Property="Background" Value="#2A2F42"/>
-                                                        <Setter Property="Foreground" Value="#6B7280"/>
+                                                        <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -295,7 +295,7 @@
 
                         <Separator Background="#33FFFFFF" Margin="0,20,0,16"/>
 
-                        <TextBlock Text="Información" Foreground="White" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                        <TextBlock Text="Información" Foreground="{DynamicResource TextMainBrush}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
                         <StackPanel x:Name="InfoRows">
                             <Grid Margin="0,0,0,8">
@@ -303,56 +303,56 @@
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Género" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblGenero" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Género" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblGenero" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Desarrollador" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblDevDetail" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Desarrollador" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblDevDetail" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Distribuidor" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblPubDetail" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Distribuidor" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblPubDetail" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Lanzamiento" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblFechaDetail" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Lanzamiento" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblFechaDetail" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Jugadores" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblJugadores" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Jugadores" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblJugadores" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Resolución" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblResolucion" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Resolución" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblResolucion" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="80"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Widescreen" Foreground="#6B7280" FontSize="12"/>
-                                <TextBlock Grid.Column="1" x:Name="lblWidescreen" Foreground="#AAA" FontSize="12"/>
+                                <TextBlock Text="Widescreen" Foreground="{DynamicResource TextMutedBrush}" FontSize="12"/>
+                                <TextBlock Grid.Column="1" x:Name="lblWidescreen" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                             </Grid>
                         </StackPanel>
                     </StackPanel>
@@ -362,34 +362,34 @@
             <!-- Bottom: description + rating -->
             <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,40,0,0">
                 <Separator Background="#33FFFFFF" Margin="0,0,0,30"/>
-                <TextBlock Text="Descripción" Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,15"/>
-                <TextBlock x:Name="lblDescripcion" TextWrapping="Wrap" Foreground="#AAA" FontSize="16" LineHeight="24" />
+                <TextBlock Text="Descripción" Foreground="{DynamicResource TextMainBrush}" FontSize="24" FontWeight="Bold" Margin="0,0,0,15"/>
+                <TextBlock x:Name="lblDescripcion" TextWrapping="Wrap" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="16" LineHeight="24" />
 
-                <TextBlock Text="Características" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
+                <TextBlock Text="Características" Foreground="{DynamicResource TextMainBrush}" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
                 <ItemsControl x:Name="CaracteristicasList" Visibility="Collapsed">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="•" Foreground="#00ADFF" Margin="0,0,8,0"/>
-                                <TextBlock Text="{Binding}" Foreground="#AAA"/>
+                                <TextBlock Text="•" Foreground="{DynamicResource AccentBrush}" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding}" Foreground="{DynamicResource TextSecundarioBrush}"/>
                             </StackPanel>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <TextBlock Text="Valorar" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
+                <TextBlock Text="Valorar" Foreground="{DynamicResource TextMainBrush}" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
                 <StackPanel x:Name="VotePanel" Orientation="Horizontal" Visibility="Collapsed">
                     <Button x:Name="StarBtn1" Content="☆" Width="40" Height="40" FontSize="24" Margin="2"
-                            Tag="1" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                            Tag="1" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextSecundarioBrush}"/>
                     <Button x:Name="StarBtn2" Content="☆" Width="40" Height="40" FontSize="24" Margin="2"
-                            Tag="2" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                            Tag="2" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextSecundarioBrush}"/>
                     <Button x:Name="StarBtn3" Content="☆" Width="40" Height="40" FontSize="24" Margin="2"
-                            Tag="3" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                            Tag="3" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextSecundarioBrush}"/>
                     <Button x:Name="StarBtn4" Content="☆" Width="40" Height="40" FontSize="24" Margin="2"
-                            Tag="4" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                            Tag="4" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextSecundarioBrush}"/>
                     <Button x:Name="StarBtn5" Content="☆" Width="40" Height="40" FontSize="24" Margin="2"
-                            Tag="5" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
-                    <TextBlock x:Name="txtRatingInfo" Text="" Foreground="#AAA" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                            Tag="5" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextSecundarioBrush}"/>
+                    <TextBlock x:Name="txtRatingInfo" Text="" Foreground="{DynamicResource TextSecundarioBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

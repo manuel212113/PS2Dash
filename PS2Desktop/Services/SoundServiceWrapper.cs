@@ -8,5 +8,10 @@ namespace PS2Desktop.Services
         {
             SoundService.PlayClick();
         }
+
+        public void PlayDownloadComplete()
+        {
+            SoundService.PlayDownloadComplete();
+        }
     }
 }

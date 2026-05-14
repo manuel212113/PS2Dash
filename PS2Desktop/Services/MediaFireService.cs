@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -38,16 +39,22 @@ namespace PS2Desktop.Services
 
         private static string ExtractFileName(string html, string fallbackUrl)
         {
+            var extension = ExtractExtensionFromUrl(html);
+
             // Try from page title
             var match = Regex.Match(html, @"<title>(.+?)</title>");
             if (match.Success)
             {
                 var title = match.Groups[1].Value;
-                // Remove only trailing " - MediaFire" or "MediaFire" suffix
                 title = Regex.Replace(title, @"\s*[-–—]\s*MediaFire\s*$", "");
                 title = Regex.Replace(title, @"^\s*MediaFire\s*[-–—]\s*", "");
                 title = title.Trim();
-                if (!string.IsNullOrEmpty(title)) return title;
+                if (!string.IsNullOrEmpty(title))
+                {
+                    if (!string.IsNullOrEmpty(extension) && !title.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+                        return title + extension;
+                    return title;
+                }
             }
 
             // Fallback: extract from direct download URL in the page
@@ -57,12 +64,36 @@ namespace PS2Desktop.Services
                 var path = match.Value;
                 var segments = path.TrimEnd('/').Split('/');
                 var last = segments.Length > 0 ? segments[^1] : null;
-                if (!string.IsNullOrEmpty(last) && last.Contains('.')) return last;
+                if (!string.IsNullOrEmpty(last))
+                {
+                    if (!last.Contains('.') && !string.IsNullOrEmpty(extension))
+                        return last + extension;
+                    return last;
+                }
             }
 
             // Last resort: from the original URL
             var segs = fallbackUrl.TrimEnd('/').Split('/');
-            return segs.Length > 0 ? segs[^1] : "unknown";
+            var name = segs.Length > 0 ? segs[^1] : "unknown";
+            if (!name.Contains('.') && !string.IsNullOrEmpty(extension))
+                return name + extension;
+            return name;
+        }
+
+        private static string ExtractExtensionFromUrl(string html)
+        {
+            var match = Regex.Match(html, @"https?://download[^""']+\.mediafire[^""']+\.(zip|rar|7z|exe|pdf|png|jpg|jpeg|gif|mp3|mp4|iso|bin|cso|nrg|mdf|ape|flac|wv|md5|sfv)", RegexOptions.IgnoreCase);
+            if (match.Success)
+                return "." + match.Groups[1].Value.ToLower();
+
+            match = Regex.Match(html, @"""filename""[^>]+>\s*([^<]+(?:\.[a-zA-Z0-9]+))");
+            if (match.Success)
+            {
+                var ext = Path.GetExtension(match.Groups[1].Value);
+                if (!string.IsNullOrEmpty(ext)) return ext.ToLower();
+            }
+
+            return "";
         }
 
         private static long? ExtractFileSize(string html)

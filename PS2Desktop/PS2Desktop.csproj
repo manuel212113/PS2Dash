@@ -11,10 +11,14 @@
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Imagenes\logops2app.png" />
+    <None Remove="Imagenes\juegosinportada.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Imagenes\logops2app.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Imagenes\juegosinportada.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Imagenes\ps2modelo.gif">

@@ -157,6 +157,30 @@ namespace PS2Desktop.Services
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<User> UpdateUserAsync(Guid userId, string displayName)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+            var sql = @"UPDATE public.users SET display_name = @name WHERE id = @id 
+                        RETURNING id, email, avatar_url, display_name, created_at";
+            await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", userId);
+            cmd.Parameters.AddWithValue("@name", displayName);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+            {
+                return new User
+                {
+                    id = reader.GetGuid(0),
+                    email = reader.GetString(1),
+                    avatar_url = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    display_name = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    created_at = reader.GetDateTime(4)
+                };
+            }
+            return null;
+        }
+
         public async Task<int> GetUserCountAsync()
         {
             await using var conn = new NpgsqlConnection(_connectionString);

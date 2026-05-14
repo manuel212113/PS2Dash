@@ -30,13 +30,15 @@ namespace PS2Desktop.Services
             return null;
         }
 
-        public async Task<List<Game>> GetGamesAsync()
+        public async Task<List<Game>> GetGamesAsync(int limit = 50, int offset = 0)
         {
             var list = new List<Game>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, publisher, genero, fecha_lanzamiento, region, media_type, jugadores, resolucion, widescreen, created_at FROM public.games ORDER BY created_at DESC";
+            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, publisher, genero, fecha_lanzamiento, region, media_type, jugadores, resolucion, widescreen, created_at FROM public.games ORDER BY created_at DESC LIMIT @limit OFFSET @offset";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@limit", limit);
+            cmd.Parameters.AddWithValue("@offset", offset);
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {

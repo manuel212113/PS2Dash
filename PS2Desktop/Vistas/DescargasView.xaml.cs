@@ -5,6 +5,7 @@ using PS2Desktop.Services;
 using PS2Desktop.Services.Interfaces;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,6 +42,8 @@ namespace PS2Desktop.Vistas
             public List<double> WaveformHistory { get; set; } = new();
             public DateTime LastUpdate { get; set; }
             public bool Completed { get; set; }
+            public bool Canceled { get; set; }
+            public string SavePath { get; set; }
         }
 
         public static void SetPendingDownload(Guid itemId, string savePath)
@@ -54,6 +57,26 @@ namespace PS2Desktop.Vistas
             InitializeComponent();
             _downloadRepo = App.ServiceProvider.GetRequiredService<IDownloadRepository>();
             _mediaFire = App.ServiceProvider.GetRequiredService<MediaFireService>();
+        }
+
+        public async void ProcesarPendientes()
+        {
+            try
+            {
+                if (_pendingItemId.HasValue && !string.IsNullOrEmpty(_pendingSavePath))
+                {
+                    var id = _pendingItemId.Value;
+                    var path = _pendingSavePath;
+                    _pendingItemId = null;
+                    _pendingSavePath = null;
+                    await CargarDescargas();
+                    await IniciarDescarga(id, path);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error al procesar descarga: " + ex.Message, "Error");
+            }
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
@@ -80,20 +103,17 @@ namespace PS2Desktop.Vistas
                     });
             }
 
-            if (_pendingItemId.HasValue && !string.IsNullOrEmpty(_pendingSavePath))
-            {
-                var id = _pendingItemId.Value;
-                var path = _pendingSavePath;
-                _pendingItemId = null;
-                _pendingSavePath = null;
-                await IniciarDescarga(id, path);
-            }
+            ProcesarPendientes();
         }
 
         private async Task IniciarDescarga(Guid itemId, string savePath)
         {
             var item = _items.FirstOrDefault(i => i.Id == itemId);
-            if (item == null || string.IsNullOrEmpty(item.DirectUrl)) return;
+            if (item == null || string.IsNullOrEmpty(item.DirectUrl))
+            {
+                System.Diagnostics.Debug.WriteLine($"IniciarDescarga: item=null={item==null}, DirectUrl empty={string.IsNullOrEmpty(item?.DirectUrl)}");
+                return;
+            }
 
             item.Status = "downloading";
             await _downloadRepo.UpdateAsync(item);
@@ -102,19 +122,45 @@ namespace PS2Desktop.Vistas
             _downloadStartTime = DateTime.UtcNow;
             _lastBytes = 0;
 
-            var state = new DownloadProgress { TotalBytes = -1 };
+            long existingBytes = 0;
+            bool fileExists = File.Exists(savePath);
+            if (fileExists)
+            {
+                var fileInfo = new FileInfo(savePath);
+                existingBytes = fileInfo.Length;
+                _lastBytes = existingBytes;
+            }
+
+            var state = new DownloadProgress { TotalBytes = -1, SavePath = savePath, BytesRead = existingBytes };
             _activeDownloads[itemId] = state;
+
+            var wasCanceled = false;
 
             try
             {
                 using var http = new HttpClient { Timeout = TimeSpan.FromHours(2) };
-                using var response = await http.GetAsync(item.DirectUrl, HttpCompletionOption.ResponseHeadersRead);
+
+                HttpResponseMessage response;
+                if (existingBytes > 0)
+                {
+                    var request = new HttpRequestMessage(HttpMethod.Get, item.DirectUrl);
+                    request.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(existingBytes, null);
+                    response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                }
+                else
+                {
+                    response = await http.GetAsync(item.DirectUrl, HttpCompletionOption.ResponseHeadersRead);
+                }
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                if (existingBytes > 0 && totalBytes > 0)
+                    totalBytes += existingBytes;
                 state.TotalBytes = totalBytes;
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = File.Create(savePath);
+                using var fileStream = fileExists 
+                    ? new FileStream(savePath, FileMode.Append, FileAccess.Write, FileShare.Read)
+                    : File.Create(savePath);
 
                 var buffer = new byte[81920];
                 long bytesRead = 0;
@@ -123,6 +169,7 @@ namespace PS2Desktop.Vistas
 
                 while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
+                    if (state.Canceled) { wasCanceled = true; break; }
                     await fileStream.WriteAsync(buffer, 0, read);
                     bytesRead += read;
                     state.BytesRead = bytesRead;
@@ -139,29 +186,50 @@ namespace PS2Desktop.Vistas
                         state.WaveformHistory.Add(speed);
                         if (state.WaveformHistory.Count > 30) state.WaveformHistory.RemoveAt(0);
                         state.LastUpdate = DateTime.UtcNow;
-                        await Dispatcher.InvokeAsync(() => ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed));
+                        ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed);
+                        if (state.Canceled) { wasCanceled = true; break; }
                     }
                 }
-
-                state.Completed = true;
-                item.Status = "completed";
-                MessageBox.Show(
-                    $"Descarga completada.\nGuardado en: {savePath}\n\nContraseña RAR: gamesgx.net",
-                    "Descarga completada");
             }
             catch (Exception ex)
             {
                 state.Completed = true;
                 item.Status = "error";
+                SafeDelete(savePath);
                 MessageBox.Show("Error al descargar: " + ex.Message, "Error");
+            }
 
-                if (File.Exists(savePath))
-                    File.Delete(savePath);
+            if (wasCanceled)
+            {
+                state.Completed = true;
+                item.Status = "paused";
+                item.SavePath = savePath;
+            }
+            else if (!state.Completed)
+            {
+                state.Completed = true;
+                item.Status = "completed";
+                SoundService.PlayDownloadComplete();
+                MessageBox.Show(
+                    $"Descarga completada.\nGuardado en: {savePath}\n\nContraseña RAR: gamesgx.net",
+                    "Descarga completada");
             }
 
             await _downloadRepo.UpdateAsync(item);
             RenderizarLista();
-            _activeDownloads.TryRemove(itemId, out _);
+
+            if (item.Status != "paused")
+                _activeDownloads.TryRemove(itemId, out _);
+        }
+
+        private static void SafeDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch { }
         }
 
         private async Task CargarDescargas()
@@ -200,9 +268,9 @@ namespace PS2Desktop.Vistas
             var border = new Border
             {
                 Background = new SolidColorBrush(Color.FromArgb(0xCC, 0x1E, 0x1E, 0x1E)),
-                CornerRadius = new CornerRadius(12),
-                Margin = new Thickness(0, 0, 0, 14),
-                Padding = new Thickness(20, 16, 16, 16),
+                CornerRadius = new CornerRadius(14),
+                Margin = new Thickness(0, 0, 0, 16),
+                Padding = new Thickness(24, 18, 20, 18),
                 Tag = item,
                 BorderThickness = new Thickness(1),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xCC, 0xCC, 0xCC)),
@@ -228,9 +296,9 @@ namespace PS2Desktop.Vistas
             {
                 var img = new Image
                 {
-                    Width = 40,
-                    Height = 40,
-                    Margin = new Thickness(0, 0, 10, 0),
+                    Width = 48,
+                    Height = 48,
+                    Margin = new Thickness(0, 0, 12, 0),
                     Stretch = Stretch.UniformToFill,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -246,7 +314,7 @@ namespace PS2Desktop.Vistas
             {
                 Text = string.IsNullOrEmpty(item.FileName) ? item.Url : item.FileName,
                 Foreground = Brushes.White,
-                FontSize = 17,
+                FontSize = 18,
                 FontWeight = FontWeights.Bold,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center
@@ -272,9 +340,9 @@ namespace PS2Desktop.Vistas
             {
                 Text = statusText,
                 Foreground = statusColor,
-                FontSize = 12,
+                FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
-                Margin = new Thickness(0, 2, 0, 0)
+                Margin = new Thickness(0, 4, 0, 0)
             });
 
             // Stats row (Descarga · Lectura · Escritura · Max) — visible only when downloading
@@ -283,7 +351,7 @@ namespace PS2Desktop.Vistas
                 var statsPanel = new StackPanel
                 {
                     Orientation = Orientation.Horizontal,
-                    Margin = new Thickness(0, 8, 0, 0)
+                    Margin = new Thickness(0, 10, 0, 0)
                 };
                 statsPanel.Children.Add(CrearStatLabel("Descarga", "0 Mbps", Colors.White));
                 statsPanel.Children.Add(CrearStatLabel("Lectura", "0 Mbps", new Color { R = 0x88, G = 0x88, B = 0x88, A = 0xFF }));
@@ -296,23 +364,23 @@ namespace PS2Desktop.Vistas
                 // Waveform graph — updates dynamically
                 var waveformCanvas = new Canvas
                 {
-                    Width = 80,
-                    Height = 24,
-                    Margin = new Thickness(8, 0, 0, 0),
+                    Width = 100,
+                    Height = 28,
+                    Margin = new Thickness(10, 0, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center,
                     Tag = item.Id + ":WaveformCanvas"
                 };
                 var polyline = new Polyline
                 {
                     Stroke = new SolidColorBrush(Color.FromRgb(0xFF, 0x14, 0x93)),
-                    StrokeThickness = 1.5,
+                    StrokeThickness = 2,
                     StrokeLineJoin = PenLineJoin.Round,
                     Tag = item.Id + ":WaveformLine"
                 };
                 // Start with flat line
                 var pts = new PointCollection();
                 for (int i = 0; i < 30; i++)
-                    pts.Add(new Point(i * 2.5, 12));
+                    pts.Add(new Point(i * 3.33, 14));
                 polyline.Points = pts;
                 waveformCanvas.Children.Add(polyline);
                 writePanel.Children.Add(waveformCanvas);
@@ -323,16 +391,16 @@ namespace PS2Desktop.Vistas
             // Progress bar
             var progressTrack = new Border
             {
-                Height = 4,
+                Height = 5,
                 Background = new SolidColorBrush(Color.FromRgb(0x2A, 0x2A, 0x2A)),
-                CornerRadius = new CornerRadius(2),
-                Margin = new Thickness(0, 10, 80, 0),
+                CornerRadius = new CornerRadius(3),
+                Margin = new Thickness(0, 12, 80, 0),
                 Tag = "ProgressBar"
             };
             var progressFill = new Border
             {
-                Width = 0, Height = 4,
-                CornerRadius = new CornerRadius(2),
+                Width = 0, Height = 5,
+                CornerRadius = new CornerRadius(3),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Tag = "ProgressFill"
             };
@@ -361,8 +429,8 @@ namespace PS2Desktop.Vistas
             {
                 Text = "",
                 Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-                FontSize = 11,
-                Margin = new Thickness(0, 4, 80, 0),
+                FontSize = 12,
+                Margin = new Thickness(0, 6, 80, 0),
                 Visibility = isDownloading ? Visibility.Visible : Visibility.Collapsed,
                 Tag = "ProgressText"
             };
@@ -381,15 +449,15 @@ namespace PS2Desktop.Vistas
             // Round Pause/Play button
             var pauseBtn = new Border
             {
-                Width = 36,
-                Height = 36,
-                CornerRadius = new CornerRadius(18),
+                Width = 40,
+                Height = 40,
+                CornerRadius = new CornerRadius(20),
                 Background = Brushes.Transparent,
-                BorderThickness = new Thickness(1.5),
+                BorderThickness = new Thickness(2),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Tag = item.Id,
-                Margin = new Thickness(0, 0, 0, 8)
+                Margin = new Thickness(0, 0, 0, 10)
             };
             var pauseIcon = new StackPanel
             {
@@ -418,13 +486,8 @@ namespace PS2Desktop.Vistas
                 {
                     if (s is Border b && b.Tag is Guid id)
                     {
-                        var it = _items.FirstOrDefault(i => i.Id == id);
-                        if (it != null)
-                        {
-                            it.Status = "paused";
-                            _ = _downloadRepo.UpdateAsync(it);
-                            RenderizarLista();
-                        }
+                        if (_activeDownloads.TryGetValue(id, out var ds))
+                            ds.Canceled = true;
                     }
                 };
             }
@@ -448,13 +511,10 @@ namespace PS2Desktop.Vistas
                     if (s is Border b && b.Tag is Guid id)
                     {
                         var it = _items.FirstOrDefault(i => i.Id == id);
-                        if (it != null)
+                        Debug.WriteLine("[RESUME] id=" + id + " item=" + (it != null) + " status=" + (it?.Status ?? "null") + " savePath=" + (it?.SavePath ?? "null"));
+                        if (it != null && !string.IsNullOrEmpty(it.SavePath))
                         {
-                            it.Status = "downloading";
-                            _ = _downloadRepo.UpdateAsync(it);
-                            RenderizarLista();
-                            // Prompt save dialog and start download
-                            _ = IniciarDescargaConDialogo(it);
+                            _ = IniciarDescarga(id, it.SavePath);
                         }
                     }
                 };
@@ -482,11 +542,11 @@ namespace PS2Desktop.Vistas
             // Round X button
             var xBtn = new Border
             {
-                Width = 36,
-                Height = 36,
-                CornerRadius = new CornerRadius(18),
+                Width = 40,
+                Height = 40,
+                CornerRadius = new CornerRadius(20),
                 Background = Brushes.Transparent,
-                BorderThickness = new Thickness(1.5),
+                BorderThickness = new Thickness(2),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Tag = item.Id
@@ -495,7 +555,7 @@ namespace PS2Desktop.Vistas
             {
                 Text = "✕",
                 Foreground = new SolidColorBrush(Color.FromRgb(0xCC, 0xCC, 0xCC)),
-                FontSize = 14,
+                FontSize = 16,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -515,19 +575,19 @@ namespace PS2Desktop.Vistas
             var sp = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 0, 16, 0)
+                Margin = new Thickness(0, 0, 18, 0)
             };
             sp.Children.Add(new TextBlock
             {
                 Text = label + " ",
                 Foreground = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-                FontSize = 11
+                FontSize = 12
             });
             sp.Children.Add(new TextBlock
             {
                 Text = value,
                 Foreground = new SolidColorBrush(color),
-                FontSize = 11,
+                FontSize = 12,
                 FontWeight = FontWeights.Bold,
                 Tag = label + "Value"
             });
@@ -546,14 +606,17 @@ namespace PS2Desktop.Vistas
 
             if (saveDialog.ShowDialog() != true) return;
 
+            var savePath = saveDialog.FileName;
+
             item.Status = "downloading";
             await _downloadRepo.UpdateAsync(item);
             RenderizarLista();
             _downloadStartTime = DateTime.UtcNow;
             _lastBytes = 0;
 
-            var state = new DownloadProgress { TotalBytes = -1 };
+            var state = new DownloadProgress { TotalBytes = -1, SavePath = savePath };
             _activeDownloads[item.Id] = state;
+            var wasCanceled = false;
 
             try
             {
@@ -564,7 +627,7 @@ namespace PS2Desktop.Vistas
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
                 state.TotalBytes = totalBytes;
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = File.Create(saveDialog.FileName);
+                using var fileStream = File.Create(savePath);
 
                 var buffer = new byte[81920];
                 long bytesRead = 0;
@@ -573,6 +636,7 @@ namespace PS2Desktop.Vistas
 
                 while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
+                    if (state.Canceled) { wasCanceled = true; break; }
                     await fileStream.WriteAsync(buffer, 0, read);
                     bytesRead += read;
                     state.BytesRead = bytesRead;
@@ -589,29 +653,40 @@ namespace PS2Desktop.Vistas
                         state.WaveformHistory.Add(speed);
                         if (state.WaveformHistory.Count > 30) state.WaveformHistory.RemoveAt(0);
                         state.LastUpdate = DateTime.UtcNow;
-                        await Dispatcher.InvokeAsync(() => ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed));
+                        ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed);
+                        if (state.Canceled) { wasCanceled = true; break; }
                     }
                 }
-
-                state.Completed = true;
-                item.Status = "completed";
-                MessageBox.Show(
-                    $"Descarga completada.\nGuardado en: {saveDialog.FileName}\n\nContraseña RAR: gamesgx.net",
-                    "Descarga completada");
             }
             catch (Exception ex)
             {
                 state.Completed = true;
                 item.Status = "error";
+                SafeDelete(savePath);
                 MessageBox.Show("Error al descargar: " + ex.Message, "Error");
+            }
 
-                if (File.Exists(saveDialog.FileName))
-                    File.Delete(saveDialog.FileName);
+            if (wasCanceled)
+            {
+                state.Completed = true;
+                item.Status = "paused";
+                item.SavePath = savePath;
+            }
+            else if (!state.Completed)
+            {
+                state.Completed = true;
+                item.Status = "completed";
+                SoundService.PlayDownloadComplete();
+                MessageBox.Show(
+                    $"Descarga completada.\nGuardado en: {savePath}\n\nContraseña RAR: gamesgx.net",
+                    "Descarga completada");
             }
 
             await _downloadRepo.UpdateAsync(item);
             RenderizarLista();
-            _activeDownloads.TryRemove(item.Id, out _);
+
+            if (item.Status != "paused")
+                _activeDownloads.TryRemove(item.Id, out _);
         }
 
         private string FormatearInfo(DownloadItem item)
@@ -720,11 +795,17 @@ namespace PS2Desktop.Vistas
 
             if (saveDialog.ShowDialog() != true) return;
 
+            var savePath = saveDialog.FileName;
+
             btn.IsEnabled = false;
             item.Status = "downloading";
             await _downloadRepo.UpdateAsync(item);
             RenderizarLista();
             _downloadStartTime = DateTime.UtcNow;
+
+            var state = new DownloadProgress { TotalBytes = -1, SavePath = savePath };
+            _activeDownloads[item.Id] = state;
+            var wasCanceled = false;
 
             try
             {
@@ -733,8 +814,9 @@ namespace PS2Desktop.Vistas
                 response.EnsureSuccessStatusCode();
 
                 var totalBytes = response.Content.Headers.ContentLength ?? -1;
+                state.TotalBytes = totalBytes;
                 using var contentStream = await response.Content.ReadAsStreamAsync();
-                using var fileStream = File.Create(saveDialog.FileName);
+                using var fileStream = File.Create(savePath);
 
                 var buffer = new byte[81920];
                 long bytesRead = 0;
@@ -743,8 +825,10 @@ namespace PS2Desktop.Vistas
 
                 while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
                 {
+                    if (state.Canceled) { wasCanceled = true; break; }
                     await fileStream.WriteAsync(buffer, 0, read);
                     bytesRead += read;
+                    state.BytesRead = bytesRead;
 
                     if (DateTime.UtcNow - lastUpdate > TimeSpan.FromMilliseconds(200))
                     {
@@ -752,26 +836,46 @@ namespace PS2Desktop.Vistas
                         var progress = totalBytes > 0 ? (double)bytesRead / totalBytes * 100 : 0;
                         var elapsed = (DateTime.UtcNow - _downloadStartTime).TotalSeconds;
                         var speed = elapsed > 0 ? bytesRead / elapsed : 0;
-                        await Dispatcher.InvokeAsync(() => ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed));
+                        state.Progress = progress;
+                        state.Speed = speed;
+                        if (speed > state.MaxSpeed) state.MaxSpeed = speed;
+                        state.WaveformHistory.Add(speed);
+                        if (state.WaveformHistory.Count > 30) state.WaveformHistory.RemoveAt(0);
+                        state.LastUpdate = DateTime.UtcNow;
+                        ActualizarProgreso(item.Id, progress, bytesRead, totalBytes, speed);
+                        if (state.Canceled) { wasCanceled = true; break; }
                     }
                 }
-
-                item.Status = "completed";
-                MessageBox.Show(
-                    $"Descarga completada.\nGuardado en: {saveDialog.FileName}\n\nContraseña RAR: gamesgx.net",
-                    "Descarga completada");
             }
             catch (Exception ex)
             {
+                state.Completed = true;
                 item.Status = "error";
+                SafeDelete(savePath);
                 MessageBox.Show("Error al descargar: " + ex.Message, "Error");
+            }
 
-                if (File.Exists(saveDialog.FileName))
-                    File.Delete(saveDialog.FileName);
+            if (wasCanceled)
+            {
+                state.Completed = true;
+                item.Status = "paused";
+                item.SavePath = savePath;
+            }
+            else if (!state.Completed)
+            {
+                state.Completed = true;
+                item.Status = "completed";
+                SoundService.PlayDownloadComplete();
+                MessageBox.Show(
+                    $"Descarga completada.\nGuardado en: {savePath}\n\nContraseña RAR: gamesgx.net",
+                    "Descarga completada");
             }
 
             await _downloadRepo.UpdateAsync(item);
             RenderizarLista();
+
+            if (item.Status != "paused")
+                _activeDownloads.TryRemove(item.Id, out _);
         }
 
         private void ActualizarProgreso(Guid itemId, double progress, long bytesRead = 0, long totalBytes = 0, double speed = 0)
@@ -812,9 +916,9 @@ namespace PS2Desktop.Vistas
                                                     var maxMbps = maxSpeed / 1024.0 / 1024.0 * 8;
                                                     t.Text = tag switch
                                                     {
-                                                        "DownloadValue" => $"{speedMbps:F2} Mbps",
-                                                        "ReadValue" => "0 Mbps",
-                                                        "WriteValue" => $"{speedMbps * 0.9:F2} Mbps",
+                                                        "DescargaValue" => $"{speedMbps:F2} Mbps",
+                                                        "LecturaValue" => "0 Mbps",
+                                                        "EscrituraValue" => $"{speedMbps * 0.9:F2} Mbps",
                                                         "MaxValue" => $"{maxMbps:F2} Mbps",
                                                         _ => t.Text
                                                     };
@@ -837,9 +941,9 @@ namespace PS2Desktop.Vistas
                                             var pts = new PointCollection();
                                             for (int i = 0; i < history.Count; i++)
                                             {
-                                                double x = i * (80.0 / Math.Max(history.Count - 1, 1));
+                                                double x = i * (100.0 / Math.Max(history.Count - 1, 1));
                                                 double normalized = Math.Min(history[i] / maxHist, 1.0);
-                                                double y = 22 - normalized * 20;
+                                                double y = 26 - normalized * 24;
                                                 pts.Add(new Point(x, y));
                                             }
                                             pl.Points = pts;

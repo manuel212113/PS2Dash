@@ -18,7 +18,7 @@ namespace PS2Desktop.Services
             var list = new List<DownloadItem>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, game_id, url, direct_url, file_name, file_size, status, created_at, image_url FROM public.download_links ORDER BY created_at DESC";
+            var sql = "SELECT id, game_id, url, direct_url, file_name, file_size, status, created_at, image_url, save_path FROM public.download_links ORDER BY created_at DESC";
             await using var cmd = new NpgsqlCommand(sql, conn);
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -31,7 +31,7 @@ namespace PS2Desktop.Services
             var list = new List<DownloadItem>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, game_id, url, direct_url, file_name, file_size, status, created_at, image_url FROM public.download_links WHERE game_id = @id ORDER BY created_at";
+            var sql = "SELECT id, game_id, url, direct_url, file_name, file_size, status, created_at, image_url, save_path FROM public.download_links WHERE game_id = @id ORDER BY created_at";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", gameId);
             await using var reader = await cmd.ExecuteReaderAsync();
@@ -45,8 +45,8 @@ namespace PS2Desktop.Services
             var id = item.Id == Guid.Empty ? Guid.NewGuid() : item.Id;
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = @"INSERT INTO public.download_links (id, game_id, url, direct_url, file_name, file_size, status, image_url)
-                VALUES (@id, @game_id, @url, @direct_url, @file_name, @file_size, @status, @image_url)";
+            var sql = @"INSERT INTO public.download_links (id, game_id, url, direct_url, file_name, file_size, status, image_url, save_path)
+                VALUES (@id, @game_id, @url, @direct_url, @file_name, @file_size, @status, @image_url, @save_path)";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@game_id", (object)item.GameId ?? DBNull.Value);
@@ -56,6 +56,7 @@ namespace PS2Desktop.Services
             cmd.Parameters.AddWithValue("@file_size", (object)item.FileSize ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@status", item.Status ?? "pending");
             cmd.Parameters.AddWithValue("@image_url", item.ImageUrl ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@save_path", item.SavePath ?? (object)DBNull.Value);
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -64,7 +65,7 @@ namespace PS2Desktop.Services
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
             var sql = @"UPDATE public.download_links SET direct_url=@direct_url, file_name=@file_name,
-                file_size=@file_size, status=@status, image_url=@image_url WHERE id=@id";
+                file_size=@file_size, status=@status, image_url=@image_url, save_path=@save_path WHERE id=@id";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", item.Id);
             cmd.Parameters.AddWithValue("@direct_url", item.DirectUrl ?? (object)DBNull.Value);
@@ -72,6 +73,7 @@ namespace PS2Desktop.Services
             cmd.Parameters.AddWithValue("@file_size", (object)item.FileSize ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@status", item.Status ?? "pending");
             cmd.Parameters.AddWithValue("@image_url", item.ImageUrl ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@save_path", item.SavePath ?? (object)DBNull.Value);
             await cmd.ExecuteNonQueryAsync();
         }
 
@@ -95,7 +97,8 @@ namespace PS2Desktop.Services
             FileSize = r.IsDBNull(5) ? null : r.GetInt64(5),
             Status = r.IsDBNull(6) ? "pending" : r.GetString(6),
             CreatedAt = r.GetDateTime(7),
-            ImageUrl = r.IsDBNull(8) ? null : r.GetString(8)
+            ImageUrl = r.IsDBNull(8) ? null : r.GetString(8),
+            SavePath = r.IsDBNull(9) ? null : r.GetString(9)
         };
     }
 }

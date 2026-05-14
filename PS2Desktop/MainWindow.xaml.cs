@@ -17,6 +17,7 @@ namespace PS2Desktop
     {
         private readonly ISessionService _session;
         private TemaView _currentTemaView;
+        private DescargasView _currentDescargasView;
 
         public MainWindow()
         {
@@ -24,6 +25,12 @@ namespace PS2Desktop
 
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
             SoundService.Initialize();
+
+            Loaded += async (s, e) =>
+            {
+                await AppSettings.LoadAsync();
+                AplicarTema(AppSettings.IsLightMode);
+            };
 
             // 1. CARGA INICIAL: Cargamos la vista de login
             var loginView = new LoginView();
@@ -108,7 +115,7 @@ namespace PS2Desktop
         private void ResaltarBotonActivo(Button activo)
         {
             SoundService.PlayClick();
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil };
 
             foreach (var btn in buttons)
             {
@@ -120,6 +127,27 @@ namespace PS2Desktop
                 else
                 {
                     btn.Background = Brushes.Transparent;
+                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
+                }
+            }
+        }
+
+        public void AplicarTema(bool isLightMode)
+        {
+            App.ApplyTheme(isLightMode);
+            if (isLightMode)
+            {
+                Sidebar.Background = new SolidColorBrush(Colors.White);
+                foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil })
+                {
+                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1A1A1A"));
+                }
+            }
+            else
+            {
+                Sidebar.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#121212"));
+                foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil })
+                {
                     btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
                 }
             }
@@ -174,7 +202,16 @@ namespace PS2Desktop
         public void CargarDescargasView()
         {
             DisposeCurrentContent();
-            MainContentFrame.Content = new DescargasView();
+            if (_currentDescargasView == null)
+            {
+                _currentDescargasView = new DescargasView();
+                MainContentFrame.Content = _currentDescargasView;
+            }
+            else
+            {
+                MainContentFrame.Content = _currentDescargasView;
+                _currentDescargasView.ProcesarPendientes();
+            }
             ResaltarBotonActivo(BtnDescargas);
         }
 
@@ -189,6 +226,25 @@ namespace PS2Desktop
             if (!VerificarLogin()) { MostrarLogin(() => { MainContentFrame.Content = new CrearView(); }); return; }
             MainContentFrame.Content = new CrearView();
             ResaltarBotonActivo(BtnCrear);
+        }
+
+        private void BtnConfig_Click(object sender, RoutedEventArgs e)
+        {
+            MainContentFrame.Content = new ConfiguracionView();
+            ResaltarBotonActivo(BtnConfig);
+        }
+
+        private void BtnPerfil_Click(object sender, RoutedEventArgs e)
+        {
+            if (!VerificarLogin()) { MostrarLogin(CargarEditarPerfilView); return; }
+            CargarEditarPerfilView();
+            ResaltarBotonActivo(BtnPerfil);
+        }
+
+        private void CargarEditarPerfilView()
+        {
+            DisposeCurrentContent();
+            MainContentFrame.Content = new EditarPerfilView();
         }
 
         private void ProfileSection_MouseDown(object sender, MouseButtonEventArgs e)

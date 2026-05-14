@@ -4,7 +4,7 @@ namespace PS2Desktop.Services.Interfaces
 {
     public interface IGameRepository
     {
-        Task<List<Game>> GetGamesAsync();
+        Task<List<Game>> GetGamesAsync(int limit = 50, int offset = 0);
         Task<Game> GetGameByIdAsync(Guid id);
         Task CreateGameAsync(Game game);
         Task DeleteGameAsync(Guid id);

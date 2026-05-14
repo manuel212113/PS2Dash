@@ -15,6 +15,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using System.Windows.Threading;
 using YoutubeExplode;
 using YoutubeExplode.Videos.Streams;
@@ -144,7 +145,7 @@ namespace PS2Desktop.Vistas
                     Orientation = Orientation.Horizontal,
                     Children =
                     {
-                        new TextBlock { Text = "⬇", FontSize = 16, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
+                        CrearIconoDescarga(),
                         new TextBlock { Text = "DESCARGAR", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
                     }
                 };
@@ -180,8 +181,14 @@ namespace PS2Desktop.Vistas
             var gid = game.game_id;
             if (!string.IsNullOrEmpty(gid))
             {
+                var bgId = TransformarGameIdParaBg(gid);
+                Debug.WriteLine($"[DEBUG] game_id={gid} -> bgId={bgId}");
                 for (int i = 0; i < 4; i++)
-                    _mediaSources.Add($"{ImageBase}/{gid}/{gid}_BG_{i:D2}.png");
+                {
+                    var url = $"{ImageBase}/{bgId}/{bgId}_BG_{i:D2}.png";
+                    Debug.WriteLine($"[DEBUG] BG URL {i}: {url}");
+                    _mediaSources.Add(url);
+                }
             }
             else
             {
@@ -200,7 +207,7 @@ namespace PS2Desktop.Vistas
             {
                 int idx = i + 1;
                 if (idx < _mediaSources.Count && _mediaSources[idx] != null)
-                    SetImageSafe(thumbs[i], _mediaSources[idx]);
+                    SetBgImageSafe(thumbs[i], _mediaSources[idx]);
             }
         }
 
@@ -211,6 +218,23 @@ namespace PS2Desktop.Vistas
                 img.Source = new BitmapImage(new Uri(url, UriKind.Absolute));
             }
             catch { }
+        }
+
+        private static void SetBgImageSafe(Image img, string url)
+        {
+            try
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.UriSource = new Uri(url, UriKind.Absolute);
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.EndInit();
+                img.Source = bmp;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error loading BG: {ex.Message}");
+            }
         }
 
         private async Task CargarRatingAsync(Guid gameId)
@@ -263,7 +287,7 @@ namespace PS2Desktop.Vistas
                     _mediaPlayer.Stop();
                     VideoPlayer.Visibility = Visibility.Collapsed;
                     CoverImage.Visibility = Visibility.Visible;
-                    SetImageSafe(CoverImage, _mediaSources[index]);
+                    SetBgImageSafe(CoverImage, _mediaSources[index]);
                     await Task.Delay(300);
                 }
             }
@@ -535,7 +559,7 @@ namespace PS2Desktop.Vistas
 
                 if (saveDialog.ShowDialog() != true) return;
 
-                var savedName = Path.GetFileName(saveDialog.FileName);
+                var savedName = System.IO.Path.GetFileName(saveDialog.FileName);
                 var item = new DownloadItem
                 {
                     Id = Guid.NewGuid(),
@@ -545,7 +569,8 @@ namespace PS2Desktop.Vistas
                     FileName = savedName,
                     FileSize = fileSize,
                     Status = "ready",
-                    ImageUrl = _game.image_url
+                    ImageUrl = _game.image_url,
+                    SavePath = saveDialog.FileName
                 };
 
                 await _downloadRepo.CreateAsync(item);
@@ -585,6 +610,41 @@ namespace PS2Desktop.Vistas
             _libVLC?.Dispose();
             _mediaPlayer = null;
             _libVLC = null;
+        }
+
+        private static System.Windows.Shapes.Path CrearIconoDescarga()
+        {
+            var pathData = "M9.878 18.122a3 3 0 0 0 4.244 0l3.211-3.211A1 1 0 0 0 15.919 13.5l-2.926 2.927L13 1a1 1 0 0 0-1-1h0a1 1 0 0 0-1 1l-.009 15.408L8.081 13.5a1 1 0 0 0-1.414 1.415Z M23 16h0a1 1 0 0 0-1 1v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V17a1 1 0 0 0-1-1H1a1 1 0 0 0-1 1v4a3 3 0 0 0 3 3H21a3 3 0 0 0 3-3V17A1 1 0 0 0 23 16Z";
+            return new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse(pathData),
+                Fill = new SolidColorBrush(Colors.White),
+                Width = 20,
+                Height = 20,
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(0, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+        }
+
+        private static string TransformarGameIdParaBg(string gameId)
+        {
+            if (string.IsNullOrEmpty(gameId)) return gameId;
+            
+            // SLPM-65428 → SLPM_654.28
+            if (gameId.StartsWith("SLPM-") && gameId.Length > 6)
+            {
+                var numbers = gameId.Substring(5); // "65428"
+                if (numbers.Length >= 2)
+                {
+                    var part1 = numbers.Substring(0, numbers.Length - 2); // "654"
+                    var part2 = numbers.Substring(numbers.Length - 2); // "28"
+                    return $"SLPM_{part1}.{part2}";
+                }
+            }
+            
+            // Other IDs stay as is
+            return gameId;
         }
     }
 }
