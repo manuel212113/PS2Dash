@@ -10,6 +10,7 @@ namespace PS2Desktop.Modelos
         public string? avatar_url { get; set; }
         public string? google_id { get; set; }
         public string? display_name { get; set; }
+        public string role { get; set; } = "user";
         public DateTime created_at { get; set; }
     }
 }

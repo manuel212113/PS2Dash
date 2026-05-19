@@ -80,14 +80,14 @@
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="Ancho" Foreground="{DynamicResource TextMainBrush}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
                             <Slider x:Name="SliderThemeWidth" Minimum="150" Maximum="350" Value="230" TickFrequency="10" IsSnapToTickEnabled="True"
-                                    Height="24"/>
+                                    Height="24" ValueChanged="Slider_ValueChanged"/>
                             <TextBlock x:Name="TxtThemeWidth" Text="230 px" Foreground="{DynamicResource AccentBrush}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                         </StackPanel>
                         
                         <StackPanel Grid.Column="2">
                             <TextBlock Text="Alto" Foreground="{DynamicResource TextMainBrush}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,10"/>
                             <Slider x:Name="SliderThemeHeight" Minimum="150" Maximum="400" Value="300" TickFrequency="10" IsSnapToTickEnabled="True"
-                                    Height="24"/>
+                                    Height="24" ValueChanged="Slider_ValueChanged"/>
                             <TextBlock x:Name="TxtThemeHeight" Text="300 px" Foreground="{DynamicResource AccentBrush}" FontSize="13" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                         </StackPanel>
                     </Grid>

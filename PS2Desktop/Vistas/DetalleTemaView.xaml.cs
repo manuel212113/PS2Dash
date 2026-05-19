@@ -27,6 +27,7 @@ namespace PS2Desktop.Vistas
         private readonly YoutubeClient _youtubeClient = new YoutubeClient();
         private readonly IVoteRepository _voteRepo;
         private readonly ISessionService _session;
+        private readonly IFavoriteRepository _favRepo;
         private Theme _temaActual;
         private int _userVote = 0;
 
@@ -43,6 +44,7 @@ namespace PS2Desktop.Vistas
 
             _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
+            _favRepo = App.ServiceProvider.GetRequiredService<IFavoriteRepository>();
 
             this.Loaded += (s, e) => MainScrollViewer.Focus();
             _libVLC = new LibVLC();
@@ -168,12 +170,46 @@ namespace PS2Desktop.Vistas
             }
 
             // --- Rating ---
-            _ = CargarRatingAsync(tema.id);
+            CardVisualHelper.FireAndForget(() => CargarRatingAsync(tema.id), "Error cargando rating");
 
             // --- Sidebar (precio / botón) ---
             lblPrice.Text = "GRATIS";
             btnDownload.Content = string.IsNullOrEmpty(tema.link_descarga) ? "No disponible" : "CONSEGUIR";
             btnDownload.IsEnabled = !string.IsNullOrEmpty(tema.link_descarga);
+
+            // --- Favorite button ---
+            if (_session.IsLoggedIn)
+            {
+                var favBtn = new Border
+                {
+                    CornerRadius = new CornerRadius(12), Height = 44, Cursor = Cursors.Hand,
+                    Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+                var favIcon = new TextBlock
+                {
+                    Text = "♡ Agregar a favoritos",
+                    Foreground = Brushes.White,
+                    FontSize = 13, FontWeight = FontWeights.SemiBold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                favBtn.Child = favIcon;
+                CardVisualHelper.FireAndForget(() => UpdateFavIconAsync(favIcon, tema.id, "theme"), "Error actualizando fav");
+                favBtn.MouseDown += async (s, e) =>
+                {
+                    if (_session.CurrentUser == null) return;
+                    await _favRepo.ToggleFavoriteAsync(_session.CurrentUser.id, tema.id, "theme");
+                    await UpdateFavIconAsync(favIcon, tema.id, "theme");
+                };
+
+                var sidebar = (btnDownload.Parent as StackPanel);
+                if (sidebar != null)
+                {
+                    var idx = sidebar.Children.IndexOf(btnDownload) + 1;
+                    sidebar.Children.Insert(idx, favBtn);
+                }
+            }
 
             // --- Thumbnails ---
             if (!string.IsNullOrEmpty(tema.image_url))
@@ -217,7 +253,7 @@ namespace PS2Desktop.Vistas
                     lblRatingCount.Text = $"({cnt} {(cnt == 1 ? "voto" : "votos")})";
                 }
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading ratings", ex); }
         }
 
         private async void DetalleTemaView_Loaded(object sender, RoutedEventArgs e)
@@ -348,7 +384,7 @@ namespace PS2Desktop.Vistas
         // Evento de clic en miniaturas
         private async void SeleccionarMedia_Click(object sender, RoutedEventArgs e)
         {
-            var btn = sender as Button;
+            if (sender is not Button btn) return;
             string tag = btn.Tag.ToString();
 
             int index = tag switch
@@ -479,7 +515,7 @@ namespace PS2Desktop.Vistas
                 {
                     _userVote = idx;
                     MostrarEstrellas(idx);
-                    _ = EnviarVotoAsync(idx);
+                    CardVisualHelper.FireAndForget(() => EnviarVotoAsync(idx), "Error enviando voto");
                 };
             }
         }
@@ -503,6 +539,11 @@ namespace PS2Desktop.Vistas
             {
                 try
                 {
+                    if (!Uri.TryCreate(t.link_descarga, UriKind.Absolute, out var uri) || (uri.Scheme != "https" && uri.Scheme != "http"))
+                    {
+                        Debug.WriteLine("Invalid download link: " + t.link_descarga);
+                        return;
+                    }
                     Process.Start(new ProcessStartInfo(t.link_descarga) { UseShellExecute = true });
                 }
                 catch (Exception ex)
@@ -518,17 +559,24 @@ namespace PS2Desktop.Vistas
                 await EnviarVotoAsync(val);
         }
 
+        private async System.Threading.Tasks.Task UpdateFavIconAsync(TextBlock icon, Guid itemId, string itemType)
+        {
+            if (_session.CurrentUser == null) return;
+            var isFav = await _favRepo.IsFavoriteAsync(_session.CurrentUser.id, itemId, itemType);
+            icon.Text = isFav ? "♥ Quitar de favoritos" : "♡ Agregar a favoritos";
+        }
+
         private async Task EnviarVotoAsync(int valor)
         {
             if (!_session.IsLoggedIn)
             {
-                MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ToastService.Instance.ShowWarning("Debes iniciar sesión para votar.");
                 return;
             }
 
             if (!(this.DataContext is Theme theme))
             {
-                MessageBox.Show("No hay tema cargado.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ToastService.Instance.ShowError("No hay tema cargado.");
                 return;
             }
 
@@ -544,7 +592,7 @@ namespace PS2Desktop.Vistas
             catch (Exception ex)
             {
                 Debug.WriteLine("Error voting: " + ex.Message);
-                MessageBox.Show("No se pudo registrar el voto.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                ToastService.Instance.ShowError("No se pudo registrar el voto.");
             }
         }
     }

@@ -201,7 +201,8 @@ namespace PS2Desktop.Vistas
 
         private void BtnForgotPassword_Click(object sender, RoutedEventArgs e)
         {
-            SetStatus("Contacta al administrador para recuperar tu contraseña.", Brushes.Gray);
+            var resetView = new ResetPasswordView();
+            resetView.ShowDialog();
         }
 
         private void BtnSignIn_MouseEnter(object sender, MouseEventArgs e)

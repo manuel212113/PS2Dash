@@ -98,7 +98,7 @@ namespace PS2Desktop.Services
             {
                 foreach (var file in Directory.GetFiles(folder))
                 {
-                    try { File.Delete(file); } catch { }
+                    try { File.Delete(file); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[GoogleAuth] Error deleting temp file: {ex.Message}"); }
                 }
             }
         }

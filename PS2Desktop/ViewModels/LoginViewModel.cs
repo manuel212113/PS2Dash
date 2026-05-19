@@ -28,20 +28,24 @@ namespace PS2Desktop.ViewModels
             _googleAuth = googleAuth;
         }
 
-        public string Email { get => _email; set => SetProperty(ref _email, value); }
+        public string Email { get => _email; set { if (SetProperty(ref _email, value)) OnPropertyChanged(nameof(CanLogin)); } }
         public string StatusText { get => _statusText; set => SetProperty(ref _statusText, value); }
         public System.Windows.Media.Brush StatusColor { get => _statusColor; set => SetProperty(ref _statusColor, value); }
         public bool IsLoading { get => _isLoading; set => SetProperty(ref _isLoading, value); }
         public bool IsPasswordVisible { get => _isPasswordVisible; set => SetProperty(ref _isPasswordVisible, value); }
         public bool RememberChecked { get => _rememberChecked; set => SetProperty(ref _rememberChecked, value); }
+        public bool CanLogin => !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(_password);
 
         public string Password
         {
             get => _password;
-            set => SetProperty(ref _password, value);
+            set
+            {
+                if (SetProperty(ref _password, value))
+                    OnPropertyChanged(nameof(CanLogin));
+            }
         }
 
-        public event Action<string> GoogleAuthError;
         public event Action LoginSucceeded;
 
         private void SetStatus(string message, System.Windows.Media.Brush color)
@@ -183,7 +187,7 @@ namespace PS2Desktop.ViewModels
         {
             try
             {
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                var path = AppSettings.AppSettingsPath;
                 if (File.Exists(path))
                 {
                     var json = JsonDocument.Parse(File.ReadAllText(path));
@@ -201,7 +205,7 @@ namespace PS2Desktop.ViewModels
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading Google config", ex); }
         }
     }
 }

@@ -82,6 +82,10 @@ CREATE TABLE IF NOT EXISTS public.avatars (
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_url text;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS google_id text UNIQUE;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role text DEFAULT 'user';
+UPDATE public.users SET role = 'admin' WHERE email = 'manuelintoroxd55@gmail.com' AND role != 'admin';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS reset_token text;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS reset_token_expiry timestamptz;
 ALTER TABLE public.users ALTER COLUMN password_hash DROP NOT NULL;
 ALTER TABLE public.games ADD COLUMN IF NOT EXISTS game_id text;
 ALTER TABLE public.games ADD COLUMN IF NOT EXISTS publisher text;
@@ -106,6 +110,15 @@ CREATE TABLE IF NOT EXISTS public.download_links (
 
 ALTER TABLE public.download_links ADD COLUMN IF NOT EXISTS image_url text;
 ALTER TABLE public.download_links ADD COLUMN IF NOT EXISTS save_path text;
+
+CREATE TABLE IF NOT EXISTS public.user_favorites (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    item_id uuid NOT NULL,
+    item_type text NOT NULL,
+    created_at timestamptz DEFAULT now(),
+    UNIQUE (user_id, item_id, item_type)
+);
 
 CREATE TABLE IF NOT EXISTS public.app_settings (
     id integer PRIMARY KEY,

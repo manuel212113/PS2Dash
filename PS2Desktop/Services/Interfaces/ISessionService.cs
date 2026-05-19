@@ -6,6 +6,7 @@ namespace PS2Desktop.Services.Interfaces
     {
         User CurrentUser { get; set; }
         bool IsLoggedIn { get; }
+        bool IsAdmin { get; }
         void Logout();
     }
 }

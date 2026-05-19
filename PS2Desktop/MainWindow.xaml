@@ -10,7 +10,8 @@
         <WindowChrome CaptionHeight="0" CornerRadius="25" GlassFrameThickness="0" ResizeBorderThickness="5" />
     </WindowChrome.WindowChrome>
 
-    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="25" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" MouseDown="Border_MouseDown">
+    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="25" BorderThickness="1" BorderBrush="{DynamicResource BorderBrush}" MouseDown="Border_MouseDown"
+            KeyDown="Window_KeyDown">
         <Grid>
             <Grid x:Name="LayoutGrid">
                 <Grid.ColumnDefinitions>
@@ -50,15 +51,6 @@
                                 </StackPanel>
                             </Button>
 
-                            <Button x:Name="BtnDescargas" Style="{StaticResource MenuButtonStyle}" Click="BtnDescargas_Click">
-                                <StackPanel Orientation="Horizontal">
-                                    <Path Data="M21 3H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm0 16H3V8h18v11Zm-9-6 4-4h-3V6h-2v3H8l4 4Z" 
-                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
-                                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,15,0"/>
-                                    <TextBlock Text="Descargas" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Button>
-
                             <Button x:Name="BtnCrear" Style="{StaticResource MenuButtonStyle}" Click="BtnCrear_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <Path Data="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" 
@@ -74,6 +66,15 @@
                                           Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" 
                                           Stretch="Uniform" Width="20" Height="20" Margin="0,0,15,0"/>
                                     <TextBlock Text="Config" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
+
+                            <Button x:Name="BtnAdmin" Style="{StaticResource MenuButtonStyle}" Click="BtnAdmin_Click" Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"
+                                          Fill="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                          Stretch="Uniform" Width="20" Height="20" Margin="0,0,15,0"/>
+                                    <TextBlock Text="Admin" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"/>
                                 </StackPanel>
                             </Button>
 
@@ -136,6 +137,27 @@
                     <Button Style="{StaticResource CloseButtonStyle}" Click="BtnClose_Click"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Toast notifications overlay -->
+            <ItemsControl x:Name="ToastContainer" VerticalAlignment="Bottom" HorizontalAlignment="Right"
+                          Margin="0,0,20,20" IsHitTestVisible="False" Focusable="False">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border CornerRadius="10" Background="{Binding Background}" Padding="14,10" Margin="0,0,0,8"
+                                Opacity="{Binding Opacity}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding Icon}" Foreground="{Binding Foreground}" FontSize="14" FontWeight="Bold" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Message}" Foreground="{Binding Foreground}" FontSize="13" TextWrapping="Wrap" MaxWidth="350"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Grid>
     </Border>
 </Window>

@@ -1,6 +1,5 @@
 using LibVLCSharp.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
 using PS2Desktop.Modelos;
 using PS2Desktop.Services;
 using PS2Desktop.Services.Interfaces;
@@ -31,7 +30,7 @@ namespace PS2Desktop.Vistas
         private readonly IVoteRepository _voteRepo;
         private readonly ISessionService _session;
         private readonly MediaFireService _mediaFire;
-        private readonly IDownloadRepository _downloadRepo;
+        private readonly IFavoriteRepository _favRepo;
         private Game _game;
         private int _userVote;
 
@@ -49,7 +48,7 @@ namespace PS2Desktop.Vistas
             _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
             _mediaFire = App.ServiceProvider.GetRequiredService<MediaFireService>();
-            _downloadRepo = App.ServiceProvider.GetRequiredService<IDownloadRepository>();
+            _favRepo = App.ServiceProvider.GetRequiredService<IFavoriteRepository>();
 
             _libVLC = new LibVLC();
             _mediaPlayer = new LibVLCSharp.Shared.MediaPlayer(_libVLC);
@@ -137,6 +136,41 @@ namespace PS2Desktop.Vistas
             if (!string.IsNullOrEmpty(game.image_url))
                 SetImageSafe(PosterImage, game.image_url);
 
+            // Favorite button
+            if (_session.IsLoggedIn)
+            {
+                var favBtn = new Border
+                {
+                    CornerRadius = new CornerRadius(12), Height = 44, Cursor = Cursors.Hand,
+                    Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
+                    Margin = new Thickness(0, 10, 0, 0)
+                };
+                var favIcon = new TextBlock
+                {
+                    Text = "♡ Agregar a favoritos",
+                    Foreground = Brushes.White,
+                    FontSize = 13, FontWeight = FontWeights.SemiBold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                favBtn.Child = favIcon;
+                CardVisualHelper.FireAndForget(() => UpdateFavIconAsync(favIcon, game.id, "game"), "Error actualizando fav");
+                favBtn.MouseDown += async (s, e) =>
+                {
+                    if (_session.CurrentUser == null) return;
+                    await _favRepo.ToggleFavoriteAsync(_session.CurrentUser.id, game.id, "game");
+                    await UpdateFavIconAsync(favIcon, game.id, "game");
+                };
+
+                // Insert before the info section separator
+                var sidebar = (btnDownload.Parent as StackPanel);
+                if (sidebar != null)
+                {
+                    var idx = sidebar.Children.IndexOf(btnDownload) + 1;
+                    sidebar.Children.Insert(idx, favBtn);
+                }
+            }
+
             // Sidebar
             if (!string.IsNullOrEmpty(game.link_descarga))
             {
@@ -166,7 +200,7 @@ namespace PS2Desktop.Vistas
             }
 
             // Rating
-            _ = CargarRatingAsync(game.id);
+            CardVisualHelper.FireAndForget(() => CargarRatingAsync(game.id), "Error cargando rating");
             VotePanel.Visibility = Visibility.Visible;
             ConfigurarEstrellas();
 
@@ -217,7 +251,7 @@ namespace PS2Desktop.Vistas
             {
                 img.Source = new BitmapImage(new Uri(url, UriKind.Absolute));
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading image", ex); }
         }
 
         private static void SetBgImageSafe(Image img, string url)
@@ -252,7 +286,7 @@ namespace PS2Desktop.Vistas
                     lblRatingCount.Text = $"({cnt} {(cnt == 1 ? "voto" : "votos")})";
                 }
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading ratings", ex); }
         }
 
         // --- Media navigation ---
@@ -421,14 +455,6 @@ namespace PS2Desktop.Vistas
             _isDraggingSlider = false;
         }
 
-        // --- Auto-hide controls ---
-
-        private void PlayerBorder_MouseEnter(object sender, MouseEventArgs e) { }
-        private void PlayerBorder_MouseMove(object sender, MouseEventArgs e) { }
-        private void PlayerBorder_MouseLeave(object sender, MouseEventArgs e) { }
-        private void ControlsPanel_MouseEnter(object sender, MouseEventArgs e) { }
-        private void ControlsPanel_MouseMove(object sender, MouseEventArgs e) { }
-
         // --- Scroll ---
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -472,7 +498,7 @@ namespace PS2Desktop.Vistas
 
                 btn.Tag = idx.ToString();
                 btn.MouseLeave += (s, e) => MostrarEstrellas(_userVote);
-                btn.Click += (s, e) => { _userVote = idx; MostrarEstrellas(idx); _ = EnviarVotoAsync(idx); };
+                btn.Click += (s, e) => { _userVote = idx; MostrarEstrellas(idx); CardVisualHelper.FireAndForget(() => EnviarVotoAsync(idx), "Error enviando voto"); };
             }
         }
 
@@ -495,12 +521,18 @@ namespace PS2Desktop.Vistas
                 await EnviarVotoAsync(val);
         }
 
+        private async System.Threading.Tasks.Task UpdateFavIconAsync(TextBlock icon, Guid itemId, string itemType)
+        {
+            if (_session.CurrentUser == null) return;
+            var isFav = await _favRepo.IsFavoriteAsync(_session.CurrentUser.id, itemId, itemType);
+            icon.Text = isFav ? "♥ Quitar de favoritos" : "♡ Agregar a favoritos";
+        }
+
         private async Task EnviarVotoAsync(int valor)
         {
             if (!_session.IsLoggedIn)
             {
-                MessageBox.Show("Debes iniciar sesión para votar.", "Login requerido",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                ToastService.Instance.ShowWarning("Debes iniciar sesión para votar.");
                 return;
             }
 
@@ -519,8 +551,7 @@ namespace PS2Desktop.Vistas
             catch (Exception ex)
             {
                 Debug.WriteLine("Error voting: " + ex.Message);
-                MessageBox.Show("No se pudo registrar el voto.", "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ToastService.Instance.ShowError("No se pudo registrar el voto.");
             }
         }
 
@@ -530,70 +561,31 @@ namespace PS2Desktop.Vistas
 
             var originalContent = btnDownload.Content;
             btnDownload.IsEnabled = false;
-            btnDownload.Content = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Children =
-                {
-                    new TextBlock { Text = "⏳", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
-                    new TextBlock { Text = "Resolviendo...", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
-                }
-            };
+            btnDownload.Content = "🔍 Resolviendo enlace...";
 
             try
             {
-                var (directUrl, fileName, fileSize) = await _mediaFire.ResolveAsync(_game.link_descarga);
+                var (directUrl, _, _) = await _mediaFire.ResolveAsync(_game.link_descarga);
 
                 if (string.IsNullOrEmpty(directUrl))
                 {
-                    MessageBox.Show("No se pudo resolver el enlace de descarga.", "Error",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    ToastService.Instance.ShowError("No se pudo resolver el enlace de descarga.");
                     return;
                 }
 
-                var saveDialog = new SaveFileDialog
+                if (!Uri.TryCreate(directUrl, UriKind.Absolute, out var uri) || (uri.Scheme != "https" && uri.Scheme != "http"))
                 {
-                    FileName = fileName ?? $"{_game.nombre ?? "juego"}.rar",
-                    Filter = "Todos los archivos|*.*"
-                };
-
-                if (saveDialog.ShowDialog() != true) return;
-
-                var savedName = System.IO.Path.GetFileName(saveDialog.FileName);
-                var item = new DownloadItem
-                {
-                    Id = Guid.NewGuid(),
-                    GameId = _game.id,
-                    Url = _game.link_descarga,
-                    DirectUrl = directUrl,
-                    FileName = savedName,
-                    FileSize = fileSize,
-                    Status = "ready",
-                    ImageUrl = _game.image_url,
-                    SavePath = saveDialog.FileName
-                };
-
-                await _downloadRepo.CreateAsync(item);
-
-                DescargasView.SetPendingDownload(item.Id, saveDialog.FileName);
-
-                var mainWindow = Window.GetWindow(this) as MainWindow;
-                mainWindow?.CargarDescargasView();
+                    ToastService.Instance.ShowError("Enlace de descarga no válido.");
+                    return;
+                }
+                Process.Start(new ProcessStartInfo(directUrl) { UseShellExecute = true });
+                ToastService.Instance.ShowSuccess("Descarga iniciada en el navegador.");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error en descarga: " + ex.Message);
-                btnDownload.Content = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Children =
-                    {
-                        new TextBlock { Text = "⚠", FontSize = 14, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center },
-                        new TextBlock { Text = "Error", FontSize = 14, VerticalAlignment = VerticalAlignment.Center }
-                    }
-                };
-                MessageBox.Show("Error al iniciar descarga: " + ex.Message, "Error",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                Debug.WriteLine("Error: " + ex.Message);
+                btnDownload.Content = "⚠ Error";
+                ToastService.Instance.ShowError("Error al resolver el enlace: " + ex.Message);
                 await Task.Delay(1500);
             }
             finally

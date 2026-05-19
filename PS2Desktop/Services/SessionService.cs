@@ -7,10 +7,7 @@ namespace PS2Desktop.Services
     {
         public User CurrentUser { get; set; }
         public bool IsLoggedIn => CurrentUser != null;
-
-        public void Logout()
-        {
-            CurrentUser = null;
-        }
+        public bool IsAdmin => CurrentUser?.role == "admin";
+        public void Logout() { CurrentUser = null; }
     }
 }

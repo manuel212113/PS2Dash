@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data;
 using System.Text.Json;
 using Npgsql;
@@ -9,6 +10,12 @@ namespace PS2Desktop.Services
     public class GameRepository : IGameRepository
     {
         private readonly string _connectionString;
+        private static readonly Dictionary<string, string> SortClauses = new()
+        {
+            ["date_asc"] = "created_at ASC",
+            ["name_asc"] = "nombre ASC",
+            ["name_desc"] = "nombre DESC",
+        };
 
         public GameRepository(DatabaseInitializer dbInit)
         {
@@ -30,13 +37,25 @@ namespace PS2Desktop.Services
             return null;
         }
 
-        public async Task<List<Game>> GetGamesAsync(int limit = 50, int offset = 0)
+        public async Task<List<Game>> GetGamesAsync(int limit = 50, int offset = 0, string? search = null, string? sortBy = null, string? genre = null)
         {
             var list = new List<Game>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, publisher, genero, fecha_lanzamiento, region, media_type, jugadores, resolucion, widescreen, created_at FROM public.games ORDER BY created_at DESC LIMIT @limit OFFSET @offset";
+            var conditions = new List<string>();
+            if (!string.IsNullOrWhiteSpace(search))
+                conditions.Add("(nombre ILIKE @search OR autor ILIKE @search OR genero ILIKE @search)");
+            if (!string.IsNullOrWhiteSpace(genre))
+                conditions.Add("genero ILIKE @genre");
+            var where = conditions.Count > 0 ? "WHERE " + string.Join(" AND ", conditions) : "";
+            if (!SortClauses.TryGetValue(sortBy ?? "", out var order))
+                order = "created_at DESC";
+            var sql = $"SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, game_id, publisher, genero, fecha_lanzamiento, region, media_type, jugadores, resolucion, widescreen, created_at FROM public.games {where} ORDER BY {order} LIMIT @limit OFFSET @offset";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            if (!string.IsNullOrWhiteSpace(search))
+                cmd.Parameters.AddWithValue("@search", $"%{search}%");
+            if (!string.IsNullOrWhiteSpace(genre))
+                cmd.Parameters.AddWithValue("@genre", $"%{genre}%");
             cmd.Parameters.AddWithValue("@limit", limit);
             cmd.Parameters.AddWithValue("@offset", offset);
             await using var reader = await cmd.ExecuteReaderAsync();
@@ -88,12 +107,22 @@ namespace PS2Desktop.Services
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task<int> GetGameCountAsync()
+        public async Task<int> GetGameCountAsync(string? search = null, string? genre = null)
         {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT COUNT(*) FROM public.games";
+            var conditions = new List<string>();
+            if (!string.IsNullOrWhiteSpace(search))
+                conditions.Add("(nombre ILIKE @search OR autor ILIKE @search OR genero ILIKE @search)");
+            if (!string.IsNullOrWhiteSpace(genre))
+                conditions.Add("genero ILIKE @genre");
+            var where = conditions.Count > 0 ? "WHERE " + string.Join(" AND ", conditions) : "";
+            var sql = $"SELECT COUNT(*) FROM public.games {where}";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            if (!string.IsNullOrWhiteSpace(search))
+                cmd.Parameters.AddWithValue("@search", $"%{search}%");
+            if (!string.IsNullOrWhiteSpace(genre))
+                cmd.Parameters.AddWithValue("@genre", $"%{genre}%");
             var result = await cmd.ExecuteScalarAsync();
             return result is long l ? (int)l : 0;
         }

@@ -40,7 +40,6 @@ namespace PS2Desktop.Vistas
         private async void HomeView_Loaded(object sender, RoutedEventArgs e)
         {
             LoadPS2Model();
-            StartContinuousAnimations();
             AnimateStaggeredEntrance();
             WireHoverEffects();
             WireNavigation();
@@ -68,14 +67,7 @@ namespace PS2Desktop.Vistas
                     _gifTimer.Start();
                 }
             }
-            catch { }
-        }
-
-        private void StartContinuousAnimations()
-        {
-            if (FindResource("GlowPulse") is Storyboard glow) glow.Begin(this);
-            if (FindResource("FloatAnim") is Storyboard floatAnim) floatAnim.Begin(this);
-            if (FindResource("SweepAnim") is Storyboard sweep) sweep.Begin(this);
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading GIF", ex); }
         }
 
         private void AnimateStaggeredEntrance()
@@ -151,8 +143,13 @@ namespace PS2Desktop.Vistas
                 StatUsers.Text = (await taskUser).ToString();
                 var (avg, _) = await taskRating;
                 StatRating.Text = avg > 0 ? avg.ToString("F1") : "0.0";
+
+                SkeletonStat1.Visibility = Visibility.Collapsed;
+                SkeletonStat2.Visibility = Visibility.Collapsed;
+                SkeletonStat3.Visibility = Visibility.Collapsed;
+                SkeletonStat4.Visibility = Visibility.Collapsed;
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading stats", ex); }
         }
 
         private void WireNavigation()

@@ -58,9 +58,9 @@ namespace PS2Desktop.Vistas
                 SliderGameHeight.Value,
                 SliderThemeWidth.Value,
                 SliderThemeHeight.Value,
-                AppSettings.IsLightMode
+                false
             );
-            MessageBox.Show("Configuración guardada.", "Guardado");
+            ToastService.Instance.ShowSuccess("Configuración guardada.");
         }
     }
 }

@@ -149,9 +149,7 @@
                 <StackPanel Grid.Row="0">
                     <Border x:Name="PlayerBorder" CornerRadius="20,20,0,0" Background="Black"
                             ClipToBounds="True" Height="480"
-                            MouseEnter="PlayerBorder_MouseEnter"
-                            MouseMove="PlayerBorder_MouseMove"
-                            MouseLeave="PlayerBorder_MouseLeave">
+                            >
                         <Grid Background="Black">
                             <Image x:Name="CoverImage" Stretch="UniformToFill" Visibility="Collapsed"/>
                             <vlc:VideoView x:Name="VideoPlayer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
@@ -175,8 +173,7 @@
 
                     <Border x:Name="ControlsPanel" CornerRadius="0,0,20,20" Background="{DynamicResource CardAltBrush}"
                             Padding="12,12" Height="68"
-                            MouseEnter="ControlsPanel_MouseEnter"
-                            MouseMove="ControlsPanel_MouseMove">
+                            >
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>

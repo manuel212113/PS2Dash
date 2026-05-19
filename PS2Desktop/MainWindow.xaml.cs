@@ -17,7 +17,6 @@ namespace PS2Desktop
     {
         private readonly ISessionService _session;
         private TemaView _currentTemaView;
-        private DescargasView _currentDescargasView;
 
         public MainWindow()
         {
@@ -29,7 +28,8 @@ namespace PS2Desktop
             Loaded += async (s, e) =>
             {
                 await AppSettings.LoadAsync();
-                AplicarTema(AppSettings.IsLightMode);
+                App.EnsureDarkTheme();
+                ToastService.Instance.RegisterContainer(ToastContainer);
             };
 
             // 1. CARGA INICIAL: Cargamos la vista de login
@@ -70,6 +70,7 @@ namespace PS2Desktop
         private void BtnHome_Click(object sender, RoutedEventArgs e)
         {
             if (!VerificarLogin()) { MostrarLogin(CargarHomeView); return; }
+            if (!_session.IsAdmin) return;
             CargarHomeView();
             ResaltarBotonActivo(BtnHome);
         }
@@ -115,7 +116,7 @@ namespace PS2Desktop
         private void ResaltarBotonActivo(Button activo)
         {
             SoundService.PlayClick();
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnConfig, BtnAdmin, BtnPerfil };
 
             foreach (var btn in buttons)
             {
@@ -132,24 +133,13 @@ namespace PS2Desktop
             }
         }
 
-        public void AplicarTema(bool isLightMode)
+        public void AplicarTema()
         {
-            App.ApplyTheme(isLightMode);
-            if (isLightMode)
+            App.EnsureDarkTheme();
+            Sidebar.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#121212"));
+            foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnConfig, BtnAdmin, BtnPerfil })
             {
-                Sidebar.Background = new SolidColorBrush(Colors.White);
-                foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil })
-                {
-                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1A1A1A"));
-                }
-            }
-            else
-            {
-                Sidebar.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#121212"));
-                foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear, BtnConfig, BtnPerfil })
-                {
-                    btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
-                }
+                btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
             }
         }
 
@@ -176,6 +166,15 @@ namespace PS2Desktop
             }
         }
 
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.F && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                if (MainContentFrame.Content is JuegosView jv) { jv.FocusSearch(); e.Handled = true; }
+                else if (MainContentFrame.Content is TemaView tv) { tv.FocusSearch(); e.Handled = true; }
+            }
+        }
+
         private void CargarJuegosView()
         {
             DisposeCurrentContent();
@@ -199,28 +198,6 @@ namespace PS2Desktop
             CargarJuegosView();
         }
 
-        public void CargarDescargasView()
-        {
-            DisposeCurrentContent();
-            if (_currentDescargasView == null)
-            {
-                _currentDescargasView = new DescargasView();
-                MainContentFrame.Content = _currentDescargasView;
-            }
-            else
-            {
-                MainContentFrame.Content = _currentDescargasView;
-                _currentDescargasView.ProcesarPendientes();
-            }
-            ResaltarBotonActivo(BtnDescargas);
-        }
-
-        private void BtnDescargas_Click(object sender, RoutedEventArgs e)
-        {
-            if (!VerificarLogin()) { MostrarLogin(CargarDescargasView); return; }
-            CargarDescargasView();
-        }
-
         private void BtnCrear_Click(object sender, RoutedEventArgs e)
         {
             if (!VerificarLogin()) { MostrarLogin(() => { MainContentFrame.Content = new CrearView(); }); return; }
@@ -230,21 +207,36 @@ namespace PS2Desktop
 
         private void BtnConfig_Click(object sender, RoutedEventArgs e)
         {
+            if (!_session.IsAdmin) return;
             MainContentFrame.Content = new ConfiguracionView();
             ResaltarBotonActivo(BtnConfig);
         }
 
+        private void BtnAdmin_Click(object sender, RoutedEventArgs e)
+        {
+            if (!VerificarLogin() || !_session.IsAdmin) return;
+            CargarAdminView();
+            ResaltarBotonActivo(BtnAdmin);
+        }
+
+        private void CargarAdminView()
+        {
+            DisposeCurrentContent();
+            MainContentFrame.Content = new AdministrarUsuariosView();
+        }
+
         private void BtnPerfil_Click(object sender, RoutedEventArgs e)
         {
-            if (!VerificarLogin()) { MostrarLogin(CargarEditarPerfilView); return; }
-            CargarEditarPerfilView();
+            if (!VerificarLogin()) { MostrarLogin(() => AbrirPerfilWindow()); return; }
+            AbrirPerfilWindow();
             ResaltarBotonActivo(BtnPerfil);
         }
 
-        private void CargarEditarPerfilView()
+        private void AbrirPerfilWindow()
         {
-            DisposeCurrentContent();
-            MainContentFrame.Content = new EditarPerfilView();
+            var perfilView = new PerfilView();
+            if (perfilView.ShowDialog() == true)
+                ActualizarPerfil();
         }
 
         private void ProfileSection_MouseDown(object sender, MouseButtonEventArgs e)
@@ -262,7 +254,7 @@ namespace PS2Desktop
             LogoutText.Visibility = Visibility.Collapsed;
             ProfileName.Text = "Usuario";
             AvatarImage.Source = null;
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnDescargas, BtnCrear };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnAdmin, BtnPerfil };
             foreach (var btn in buttons)
             {
                 btn.Background = Brushes.Transparent;
@@ -299,6 +291,13 @@ namespace PS2Desktop
             {
                 AvatarImage.Source = GenerateInitialsImage(display);
             }
+
+            // Mostrar/ocultar botones según rol
+            var esAdmin = _session.IsAdmin;
+            BtnAdmin.Visibility = esAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnHome.Visibility = esAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnCrear.Visibility = esAdmin ? Visibility.Visible : Visibility.Collapsed;
+            BtnConfig.Visibility = esAdmin ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private static string GetInitials(string email)

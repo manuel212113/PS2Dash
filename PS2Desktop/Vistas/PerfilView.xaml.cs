@@ -20,6 +20,9 @@ namespace PS2Desktop.Vistas
         private readonly IUserRepository _userRepo;
         private string _selectedAvatarUrl;
         private string _originalAvatarUrl;
+        private string _originalDisplayName;
+        private bool _nameChanged;
+        private bool _avatarChanged;
 
         public PerfilView()
         {
@@ -29,6 +32,7 @@ namespace PS2Desktop.Vistas
             _avatarRepo = App.ServiceProvider.GetRequiredService<IAvatarRepository>();
             _userRepo = App.ServiceProvider.GetRequiredService<IUserRepository>();
             Loaded += PerfilView_Loaded;
+            TxtDisplayName.TextChanged += TxtDisplayName_TextChanged;
         }
 
         private async void PerfilView_Loaded(object sender, RoutedEventArgs e)
@@ -38,11 +42,14 @@ namespace PS2Desktop.Vistas
 
             LblUserName.Text = user.display_name ?? user.email;
             _originalAvatarUrl = user.avatar_url;
+            _originalDisplayName = user.display_name ?? "";
+            TxtDisplayName.Text = _originalDisplayName;
+            TxtCharCount.Text = $"{_originalDisplayName.Length}/20";
 
             if (!string.IsNullOrEmpty(user.avatar_url))
             {
                 try { CurrentAvatar.Source = new BitmapImage(new Uri(user.avatar_url)); }
-                catch { }
+                catch (Exception ex) { LoggingService.Instance.Error("Error loading current avatar", ex); }
             }
 
             // Entrance: card fade in + scale up
@@ -121,7 +128,38 @@ namespace PS2Desktop.Vistas
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { LoggingService.Instance.Error("Error loading avatars", ex); }
+        }
+
+        private void TxtDisplayName_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var len = TxtDisplayName.Text.Length;
+            TxtCharCount.Text = $"{len}/20";
+            TxtCharCount.Foreground = len >= 20
+                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x35))
+                : new SolidColorBrush(Color.FromRgb(0x5A, 0x6A, 0x78));
+            _nameChanged = TxtDisplayName.Text != _originalDisplayName;
+            UpdateSaveButtonState();
+        }
+
+        private void UpdateSaveButtonState()
+        {
+            BtnSave.IsEnabled = _nameChanged || _avatarChanged;
+            if (BtnSave.IsEnabled)
+            {
+                var glowAnim = new ColorAnimation(
+                    Color.FromRgb(0, 0x55, 0xCC),
+                    Color.FromRgb(0, 0x77, 0xEE),
+                    TimeSpan.FromMilliseconds(1200))
+                { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever };
+                BtnSave.Background = new SolidColorBrush(Color.FromRgb(0, 0x55, 0xCC));
+                BtnSave.Background.BeginAnimation(SolidColorBrush.ColorProperty, glowAnim);
+            }
+            else
+            {
+                BtnSave.Background = new SolidColorBrush(Color.FromRgb(0, 0x55, 0xCC));
+                BtnSave.Background.BeginAnimation(SolidColorBrush.ColorProperty, null);
+            }
         }
 
         private void Avatar_Click(object sender, MouseButtonEventArgs e)
@@ -129,7 +167,8 @@ namespace PS2Desktop.Vistas
             if (sender is Border border && border.Tag is string url && !string.IsNullOrEmpty(url))
             {
                 _selectedAvatarUrl = url;
-                try { CurrentAvatar.Source = new BitmapImage(new Uri(url)); } catch { }
+                _avatarChanged = url != _originalAvatarUrl;
+                try { CurrentAvatar.Source = new BitmapImage(new Uri(url)); } catch (Exception ex) { LoggingService.Instance.Error("Error loading avatar preview", ex); }
 
                 // Cross-fade preview
                 var fadeOut = new DoubleAnimation(1, 0.5, TimeSpan.FromMilliseconds(150))
@@ -147,18 +186,7 @@ namespace PS2Desktop.Vistas
                 border.BeginAnimation(OpacityProperty, null);
                 border.Opacity = 1;
 
-                // Button pulse
-                if (!BtnSave.IsEnabled)
-                {
-                    BtnSave.IsEnabled = true;
-                    var glowAnim = new ColorAnimation(
-                        Color.FromRgb(0, 0x55, 0xCC),
-                        Color.FromRgb(0, 0x77, 0xEE),
-                        TimeSpan.FromMilliseconds(1200))
-                    { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever };
-                    BtnSave.Background = new SolidColorBrush(Color.FromRgb(0, 0x55, 0xCC));
-                    BtnSave.Background.BeginAnimation(SolidColorBrush.ColorProperty, glowAnim);
-                }
+                UpdateSaveButtonState();
             }
         }
 
@@ -192,26 +220,60 @@ namespace PS2Desktop.Vistas
         {
             BtnSave.IsEnabled = false;
 
+            var nuevoNombre = TxtDisplayName.Text?.Trim();
+            if (string.IsNullOrEmpty(nuevoNombre))
+            {
+                ToastService.Instance.ShowWarning("El nombre no puede estar vacío.");
+                BtnSave.IsEnabled = true;
+                return;
+            }
+
             try
             {
                 var user = _session.CurrentUser;
-                await _userRepo.UpdateUserAvatarAsync(user.id, _selectedAvatarUrl);
-                user.avatar_url = _selectedAvatarUrl;
+
+                if (_avatarChanged && !string.IsNullOrEmpty(_selectedAvatarUrl))
+                {
+                    await _userRepo.UpdateUserAvatarAsync(user.id, _selectedAvatarUrl);
+                    user.avatar_url = _selectedAvatarUrl;
+                }
+
+                if (_nameChanged)
+                {
+                    var actualizado = await _userRepo.UpdateUserAsync(user.id, nuevoNombre);
+                    if (actualizado != null)
+                        _session.CurrentUser = actualizado;
+                }
+
                 DialogResult = true;
 
-                // Fade out before closing
                 var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
                 fadeOut.Completed += (s, a) => Close();
                 WindowCard.BeginAnimation(OpacityProperty, fadeOut);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error: " + ex.Message);
+                ToastService.Instance.ShowError("Error: " + ex.Message);
+                LoggingService.Instance.Error("Error al guardar perfil", ex);
                 BtnSave.IsEnabled = true;
             }
         }
 
         private void BtnCerrar_Click(object sender, RoutedEventArgs e)
+        {
+            CerrarConAnimacion();
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                CerrarConAnimacion();
+            }
+        }
+
+        private void CerrarConAnimacion()
         {
             var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200));
             fadeOut.Completed += (s, a) => Close();

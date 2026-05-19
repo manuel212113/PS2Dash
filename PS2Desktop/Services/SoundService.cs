@@ -44,7 +44,7 @@ namespace PS2Desktop.Services
                     SystemSounds.Asterisk.Play();
                 }
             }
-            catch { }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Sound] Error playing notification: {ex.Message}"); }
         }
     }
 }

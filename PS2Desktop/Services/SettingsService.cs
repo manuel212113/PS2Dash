@@ -6,6 +6,14 @@ namespace PS2Desktop.Services
 {
     public static class AppSettings
     {
+        public static readonly string AppSettingsPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+
+        public static int PageSize { get; set; } = 20;
+        public static int HttpTimeoutSeconds { get; set; } = 15;
+        public static int MaxCacheItems { get; set; } = 100;
+        public static int ImageConcurrency { get; set; } = 4;
+        public static double ToastDurationSeconds { get; set; } = 3.5;
+
         private static string? _connectionString;
         private static AppSettingsData? _cached;
 
@@ -18,9 +26,9 @@ namespace PS2Desktop.Services
         public static double GameCardHeight => _cached?.GameCardHeight ?? 350;
         public static double ThemeCardWidth => _cached?.ThemeCardWidth ?? 230;
         public static double ThemeCardHeight => _cached?.ThemeCardHeight ?? 300;
-        public static bool IsLightMode => _cached?.IsLightMode ?? false;
+        public static bool IsLightMode => false;
 
-        public static async Task LoadAsync()
+        public static async System.Threading.Tasks.Task LoadAsync()
         {
             if (string.IsNullOrEmpty(_connectionString)) return;
             try
@@ -42,39 +50,26 @@ namespace PS2Desktop.Services
                     };
                 }
             }
-            catch { }
+            catch (Npgsql.PostgresException ex) { System.Diagnostics.Debug.WriteLine($"[Settings] DB error loading: {ex.Message}"); }
+            catch (InvalidOperationException ex) { System.Diagnostics.Debug.WriteLine($"[Settings] Config error: {ex.Message}"); }
         }
 
-        public static async Task SaveAsync(double gameWidth, double gameHeight, double themeWidth, double themeHeight, bool isLightMode)
+        public static async System.Threading.Tasks.Task SaveAsync(double gameCardWidth, double gameCardHeight, double themeCardWidth, double themeCardHeight, bool isLightMode)
         {
-            if (string.IsNullOrEmpty(_connectionString)) return;
-            _cached = new AppSettingsData
-            {
-                GameCardWidth = gameWidth,
-                GameCardHeight = gameHeight,
-                ThemeCardWidth = themeWidth,
-                ThemeCardHeight = themeHeight,
-                IsLightMode = isLightMode
-            };
             try
             {
                 await using var conn = new NpgsqlConnection(_connectionString);
                 await conn.OpenAsync();
-                var sql = @"INSERT INTO public.app_settings (id, game_card_width, game_card_height, theme_card_width, theme_card_height, is_light_mode)
-                    VALUES (1, @gw, @gh, @tw, @th, @lm)
-                    ON CONFLICT (id) DO UPDATE SET 
-                        game_card_width = @gw, game_card_height = @gh, 
-                        theme_card_width = @tw, theme_card_height = @th, 
-                        is_light_mode = @lm";
+                var sql = "UPDATE public.app_settings SET game_card_width = @gcw, game_card_height = @gch, theme_card_width = @tcw, theme_card_height = @tch, is_light_mode = @lm WHERE id = 1";
                 await using var cmd = new NpgsqlCommand(sql, conn);
-                cmd.Parameters.AddWithValue("@gw", gameWidth);
-                cmd.Parameters.AddWithValue("@gh", gameHeight);
-                cmd.Parameters.AddWithValue("@tw", themeWidth);
-                cmd.Parameters.AddWithValue("@th", themeHeight);
+                cmd.Parameters.AddWithValue("@gcw", gameCardWidth);
+                cmd.Parameters.AddWithValue("@gch", gameCardHeight);
+                cmd.Parameters.AddWithValue("@tcw", themeCardWidth);
+                cmd.Parameters.AddWithValue("@tch", themeCardHeight);
                 cmd.Parameters.AddWithValue("@lm", isLightMode);
                 await cmd.ExecuteNonQueryAsync();
             }
-            catch { }
+            catch (Npgsql.PostgresException ex) { System.Diagnostics.Debug.WriteLine($"[Settings] DB error saving: {ex.Message}"); }
         }
 
         private class AppSettingsData

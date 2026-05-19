@@ -6,8 +6,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using PS2Desktop.Modelos;
+using PS2Desktop.Services;
 using PS2Desktop.Services.Interfaces;
 
 namespace PS2Desktop.Vistas
@@ -81,13 +83,13 @@ namespace PS2Desktop.Vistas
             if (string.IsNullOrWhiteSpace(nombre))
             {
                 LblStatus.Text = "El nombre es obligatorio";
-                LblStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblStatus.Foreground = Brushes.Red;
                 return;
             }
 
             BtnCrear.IsEnabled = false;
             LblStatus.Text = "Guardando...";
-            LblStatus.Foreground = System.Windows.Media.Brushes.Gray;
+            LblStatus.Foreground = Brushes.Gray;
 
             try
             {
@@ -124,13 +126,13 @@ namespace PS2Desktop.Vistas
                     LblStatus.Text = $"✓ Juego «{nombre}» creado correctamente";
                 }
 
-                LblStatus.Foreground = System.Windows.Media.Brushes.YellowGreen;
+                LblStatus.Foreground = Brushes.YellowGreen;
                 ClearForm();
             }
             catch (Exception ex)
             {
                 LblStatus.Text = "Error: " + ex.Message;
-                LblStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblStatus.Foreground = Brushes.Red;
             }
             finally
             {
@@ -144,13 +146,13 @@ namespace PS2Desktop.Vistas
             if (string.IsNullOrWhiteSpace(json))
             {
                 LblStatus.Text = "Pega el JSON primero";
-                LblStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblStatus.Foreground = Brushes.Red;
                 return;
             }
 
             BtnImportar.IsEnabled = false;
             LblStatus.Text = "Importando...";
-            LblStatus.Foreground = System.Windows.Media.Brushes.Gray;
+            LblStatus.Foreground = Brushes.Gray;
 
             try
             {
@@ -221,12 +223,12 @@ namespace PS2Desktop.Vistas
                 }
 
                 LblStatus.Text = $"✓ Importados {ok} elementos{(err > 0 ? $", {err} errores" : "")}";
-                LblStatus.Foreground = System.Windows.Media.Brushes.YellowGreen;
+                LblStatus.Foreground = Brushes.YellowGreen;
             }
             catch (Exception ex)
             {
                 LblStatus.Text = "Error al importar: " + ex.Message;
-                LblStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblStatus.Foreground = Brushes.Red;
             }
             finally
             {
@@ -278,7 +280,7 @@ namespace PS2Desktop.Vistas
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    ToastService.Instance.ShowError("Error: " + ex.Message);
                 }
             }
         }
@@ -289,13 +291,13 @@ namespace PS2Desktop.Vistas
             if (string.IsNullOrWhiteSpace(json))
             {
                 LblAvatarStatus.Text = "Pega el JSON primero";
-                LblAvatarStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblAvatarStatus.Foreground = Brushes.Red;
                 return;
             }
 
             BtnImportarAvatares.IsEnabled = false;
             LblAvatarStatus.Text = "Importando avatares...";
-            LblAvatarStatus.Foreground = System.Windows.Media.Brushes.Gray;
+            LblAvatarStatus.Foreground = Brushes.Gray;
 
             try
             {
@@ -335,13 +337,13 @@ namespace PS2Desktop.Vistas
                 }
 
                 LblAvatarStatus.Text = $"✓ Importados {ok} avatar{(ok != 1 ? "es" : "")}{(err > 0 ? $", {err} errores" : "")}";
-                LblAvatarStatus.Foreground = System.Windows.Media.Brushes.YellowGreen;
+                LblAvatarStatus.Foreground = Brushes.YellowGreen;
                 TxtAvatarJson.Clear();
             }
             catch (Exception ex)
             {
                 LblAvatarStatus.Text = "Error al importar: " + ex.Message;
-                LblAvatarStatus.Foreground = System.Windows.Media.Brushes.Red;
+                LblAvatarStatus.Foreground = Brushes.Red;
             }
             finally
             {

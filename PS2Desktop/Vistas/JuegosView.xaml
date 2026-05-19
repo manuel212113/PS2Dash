@@ -31,23 +31,85 @@
                     <Path Data="M10,6L8.59,7.41L13.17,12l-4.58,4.59L10,18l6-6L10,6z"
                           Fill="{DynamicResource TextMainBrush}" Opacity="0.7" Stretch="Uniform" Width="12" Margin="10,6,0,0"/>
                 </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <!-- Search -->
+                    <Border Background="{DynamicResource InputBrush}" CornerRadius="10" Height="36"
+                            BorderBrush="{DynamicResource InputBorderBrush}" BorderThickness="1" Width="240">
+                        <Grid Margin="10,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="0" Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                                  Fill="{DynamicResource TextMutedBrush}" Stretch="Uniform" Width="14" Margin="0,0,8,0"
+                                  VerticalAlignment="Center"/>
+                             <TextBox x:Name="TxtSearch" Grid.Column="1"
+                                      ToolTip="Ctrl+F para buscar"
+                                      Text="Buscar juegos..." Foreground="{DynamicResource TextMutedBrush}"
+                                      Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                      FontSize="13" CaretBrush="{DynamicResource AccentBrush}"
+                                     GotFocus="TxtSearch_GotFocus" LostFocus="TxtSearch_LostFocus"
+                                     TextChanged="TxtSearch_TextChanged" KeyDown="TxtSearch_KeyDown"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Genre -->
+                    <ComboBox x:Name="CboGenre" Margin="12,0,0,0" Width="130" Height="36"
+                              Style="{StaticResource DarkComboBoxStyle}"
+                              SelectionChanged="CboGenre_SelectionChanged">
+                        <ComboBoxItem Content="Todos" Tag="" IsSelected="True"/>
+                        <ComboBoxItem Content="Acción" Tag="Acción"/>
+                        <ComboBoxItem Content="Aventura" Tag="Aventura"/>
+                        <ComboBoxItem Content="Deportes" Tag="Deportes"/>
+                        <ComboBoxItem Content="Carreras" Tag="Carreras"/>
+                        <ComboBoxItem Content="Lucha" Tag="Lucha"/>
+                        <ComboBoxItem Content="RPG" Tag="RPG"/>
+                        <ComboBoxItem Content="Shooter" Tag="Shooter"/>
+                        <ComboBoxItem Content="Plataformas" Tag="Plataformas"/>
+                        <ComboBoxItem Content="Simulación" Tag="Simulación"/>
+                        <ComboBoxItem Content="Estrategia" Tag="Estrategia"/>
+                        <ComboBoxItem Content="Puzzle" Tag="Puzzle"/>
+                        <ComboBoxItem Content="Música" Tag="Música"/>
+                        <ComboBoxItem Content="Party" Tag="Party"/>
+                    </ComboBox>
+
+                    <!-- Sort -->
+                    <ComboBox x:Name="CboSort" Margin="12,0,0,0" Width="140" Height="36"
+                              Style="{StaticResource DarkComboBoxStyle}"
+                              SelectionChanged="CboSort_SelectionChanged">
+                        <ComboBoxItem Content="Más recientes" Tag="date_desc" IsSelected="True"/>
+                        <ComboBoxItem Content="Más antiguos" Tag="date_asc"/>
+                        <ComboBoxItem Content="Nombre A-Z" Tag="name_asc"/>
+                        <ComboBoxItem Content="Nombre Z-A" Tag="name_desc"/>
+                    </ComboBox>
+                </StackPanel>
+
                 <!-- Pagination Controls -->
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="BtnPrevPage" Content="◀" Click="BtnPrevPage_Click"
-                            Background="Transparent" Foreground="{DynamicResource TextMainBrush}" BorderThickness="0"
-                            FontSize="18" Cursor="Hand" Padding="10,5"/>
-                    <TextBlock x:Name="TxtPageInfo" Text="1" Foreground="{DynamicResource TextMainBrush}" VerticalAlignment="Center" Margin="10,0"/>
-                    <TextBlock Text="/" Foreground="{DynamicResource TextMainBrush}" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TxtTotalPages" Text="1" Foreground="{DynamicResource TextMainBrush}" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                            Style="{StaticResource PaginationButtonStyle}" FontSize="18"/>
+                    <TextBlock x:Name="TxtPageInfo" Text="1" Foreground="White" VerticalAlignment="Center" Margin="10,0"/>
+                    <TextBlock Text="/" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtTotalPages" Text="1" Foreground="White" VerticalAlignment="Center" Margin="5,0,10,0"/>
                     <Button x:Name="BtnNextPage" Content="▶" Click="BtnNextPage_Click"
-                            Background="Transparent" Foreground="{DynamicResource TextMainBrush}" BorderThickness="0"
-                            FontSize="18" Cursor="Hand" Padding="10,5"/>
+                            Style="{StaticResource PaginationButtonStyle}" FontSize="18"/>
                 </StackPanel>
             </Grid>
 
             <!-- ScrollViewer with WrapPanel -->
             <ScrollViewer Grid.Row="1" x:Name="JuegosScrollViewer" VerticalScrollBarVisibility="Hidden" Focusable="True">
-                <WrapPanel x:Name="juegosPanel" />
+                <Grid>
+                    <WrapPanel x:Name="juegosPanel" />
+                    <WrapPanel x:Name="skeletonPanel" Margin="0,0,0,30" Visibility="Collapsed">
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                        <Border Width="230" Height="350" Margin="0,0,20,30" Style="{StaticResource SkeletonRect}" CornerRadius="12"/>
+                    </WrapPanel>
+                </Grid>
             </ScrollViewer>
         </Grid>
 
@@ -56,9 +118,9 @@
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Path Data="M21 6H3C1.9 6 1 6.9 1 8V18C1 19.1 1.9 20 3 20H21C22.1 20 23 19.1 23 18V8C23 6.9 22.1 6 21 6ZM21 18H3V8H21V18ZM12 15C9.79 15 8 13.21 8 11C8 8.79 9.79 7 12 7C14.21 7 16 8.79 16 11C16 13.21 14.21 15 12 15ZM12 9C10.9 9 10 9.9 10 11C10 12.1 10.9 13 12 13C13.1 13 14 12.1 14 11C14 9.9 13.1 9 12 9Z"
                       Fill="{DynamicResource TextSecundarioBrush}" Stretch="Uniform" Width="80" Height="80" Margin="0,0,0,20"/>
-                <TextBlock Text="No hay juegos disponibles" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="18" FontWeight="SemiBold"
+                <TextBlock x:Name="EmptyTitle" Text="No hay juegos disponibles" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="18" FontWeight="SemiBold"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Los juegos aparecerán aquí cuando sean agregados" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"
+                <TextBlock x:Name="EmptySubtitle" Text="Los juegos aparecerán aquí cuando sean agregados" Foreground="{DynamicResource TextMutedBrush}" FontSize="13"
                            HorizontalAlignment="Center" Margin="0,8,0,0"/>
             </StackPanel>
         </Grid>

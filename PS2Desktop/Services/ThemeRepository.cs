@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data;
 using System.Text.Json;
 using Npgsql;
@@ -9,19 +10,32 @@ namespace PS2Desktop.Services
     public class ThemeRepository : IThemeRepository
     {
         private readonly string _connectionString;
+        private static readonly Dictionary<string, string> SortClauses = new()
+        {
+            ["date_asc"] = "created_at ASC",
+            ["name_asc"] = "nombre ASC",
+            ["name_desc"] = "nombre DESC",
+        };
 
         public ThemeRepository(DatabaseInitializer dbInit)
         {
             _connectionString = dbInit.ConnectionString;
         }
 
-        public async Task<List<Theme>> GetThemesAsync()
+        public async Task<List<Theme>> GetThemesAsync(string? search = null, string? sortBy = null)
         {
             var list = new List<Theme>();
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, created_at FROM public.themes ORDER BY created_at DESC";
+            var where = "";
+            if (!string.IsNullOrWhiteSpace(search))
+                where = "WHERE (nombre ILIKE @search OR autor ILIKE @search)";
+            if (!SortClauses.TryGetValue(sortBy ?? "", out var order))
+                order = "created_at DESC";
+            var sql = $"SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, created_at FROM public.themes {where} ORDER BY {order}";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            if (!string.IsNullOrWhiteSpace(search))
+                cmd.Parameters.AddWithValue("@search", $"%{search}%");
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
@@ -34,7 +48,7 @@ namespace PS2Desktop.Services
                         if (!string.IsNullOrWhiteSpace(json))
                             caracteristicas = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
                     }
-                    catch { }
+                    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[ThemeRepo] Error deserializing: {ex.Message}"); }
                 }
 
                 list.Add(new Theme
@@ -80,12 +94,17 @@ namespace PS2Desktop.Services
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task<int> GetThemeCountAsync()
+        public async Task<int> GetThemeCountAsync(string? search = null)
         {
             await using var conn = new NpgsqlConnection(_connectionString);
             await conn.OpenAsync();
-            var sql = "SELECT COUNT(*) FROM public.themes";
+            var where = "";
+            if (!string.IsNullOrWhiteSpace(search))
+                where = "WHERE (nombre ILIKE @search OR autor ILIKE @search)";
+            var sql = $"SELECT COUNT(*) FROM public.themes {where}";
             await using var cmd = new NpgsqlCommand(sql, conn);
+            if (!string.IsNullOrWhiteSpace(search))
+                cmd.Parameters.AddWithValue("@search", $"%{search}%");
             var result = await cmd.ExecuteScalarAsync();
             return result is long l ? (int)l : 0;
         }

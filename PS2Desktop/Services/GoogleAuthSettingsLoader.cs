@@ -7,7 +7,7 @@ namespace PS2Desktop.Services
     {
         public void LoadInto(Action<string, string> configureAction)
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+            var path = AppSettings.AppSettingsPath;
             if (!File.Exists(path)) return;
 
             var json = JsonDocument.Parse(File.ReadAllText(path));

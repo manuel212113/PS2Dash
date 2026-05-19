@@ -182,7 +182,16 @@
                     <StackPanel>
                         <Path Data="M21 6h-2v2h-2V6h-2V4h2V2h2v2h2v2zm-10 3c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm0 4c-2.33 0-7 1.17-7 3.5V17h14v-1.5c0-2.33-4.67-3.5-7-3.5z"
                               Fill="{DynamicResource AccentDarkBrush}" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatDemos" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <Grid>
+                            <TextBlock x:Name="StatDemos" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                            <Border x:Name="SkeletonStat1" Height="28" Width="60" Margin="0,10,0,0" Style="{StaticResource SkeletonRect}" HorizontalAlignment="Left">
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}"/>
+                                    </EventTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Demos Disponibles" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
@@ -196,7 +205,16 @@
                     <StackPanel>
                         <Path Data="M17.5,8A1.5,1.5 0 1,1 16,9.5A1.5,1.5 0 0,1 17.5,8 M12.5,5A1.5,1.5 0 1,1 11,6.5A1.5,1.5 0 0,1 12.5,5 M7.5,8A1.5,1.5 0 1,1 6,9.5A1.5,1.5 0 0,1 7.5,8 M7.5,14A1.5,1.5 0 1,1 6,15.5A1.5,1.5 0 0,1 7.5,14 M12.083 24A12 12 0 0 1 3.745 3.371 11.885 11.885 0 0 1 12.5.007 12.155 12.155 0 0 1 24.08 11.7a11.924 11.924 0 0 1-.775 4.552 1.888 1.888 0 0 1-1.377 1.177 1.912 1.912 0 0 1-1.769-.521l-.1-.1a3.567 3.567 0 0 0-6.089 2.553l.04 4.516-.924.077C12.753 23.978 12.421 24 12.083 24Z"
                               Fill="#00B4D8" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatTemas" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <Grid>
+                            <TextBlock x:Name="StatTemas" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                            <Border x:Name="SkeletonStat2" Height="28" Width="60" Margin="0,10,0,0" Style="{StaticResource SkeletonRect}" HorizontalAlignment="Left">
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}"/>
+                                    </EventTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Temas OPL" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
@@ -210,7 +228,16 @@
                     <StackPanel>
                         <Path Data="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
                                Fill="{DynamicResource TextSecundarioBrush}" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatRating" Text="0.0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <Grid>
+                            <TextBlock x:Name="StatRating" Text="0.0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                            <Border x:Name="SkeletonStat3" Height="28" Width="60" Margin="0,10,0,0" Style="{StaticResource SkeletonRect}" HorizontalAlignment="Left">
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}"/>
+                                    </EventTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Valoración Media" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>
@@ -224,7 +251,16 @@
                     <StackPanel>
                         <Path Data="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V17h14v-1.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V17h6v-1.5c0-2.33-4.67-3.5-7-3.5z"
                               Fill="#00E676" Stretch="Uniform" Width="24" Height="24" Opacity="0.8"/>
-                        <TextBlock x:Name="StatUsers" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                        <Grid>
+                            <TextBlock x:Name="StatUsers" Text="0" Foreground="{DynamicResource TextMainBrush}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0"/>
+                            <Border x:Name="SkeletonStat4" Height="28" Width="60" Margin="0,10,0,0" Style="{StaticResource SkeletonRect}" HorizontalAlignment="Left">
+                                <Border.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource ShimmerAnimation}"/>
+                                    </EventTrigger>
+                                </Border.Triggers>
+                            </Border>
+                        </Grid>
                         <TextBlock Text="Usuarios" Foreground="{DynamicResource TextSecundarioBrush}" FontSize="12"/>
                     </StackPanel>
                 </Border>

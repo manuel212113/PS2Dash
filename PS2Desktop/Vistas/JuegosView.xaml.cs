@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,116 +20,211 @@ namespace PS2Desktop.Vistas
     {
         public event EventHandler<Game> IrADetalle;
 
-        private readonly IGameRepository _gameRepo;
+        private IGameRepository _gameRepo;
+        private IFavoriteRepository _favRepo;
         private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(15) };
+        private readonly ImageCacheService _imageCache = ImageCacheService.Instance;
+        private static readonly BitmapImage _placeholderImage = new(new Uri("pack://application:,,,/Imagenes/juegosinportada.png"));
+        private ISessionService _session;
 
         private int _currentPage = 1;
         private int _totalPages = 1;
         private int _totalGames = 0;
-        private const int GamesPerPage = 20;
+        private int GamesPerPage => AppSettings.PageSize;
+        private string? _searchText;
+        private string? _sortBy = "date_desc";
+        private string? _genreFilter;
+        private CancellationTokenSource? _searchCts;
         private List<Border> _tarjetasCreadas = new();
 
         public JuegosView()
         {
             InitializeComponent();
-            _gameRepo = App.ServiceProvider.GetRequiredService<IGameRepository>();
-            App.ThemeChanged += OnThemeChanged;
-            this.Unloaded += (s, e) => App.ThemeChanged -= OnThemeChanged;
         }
 
-        private void OnThemeChanged(bool isLightMode)
+        private IGameRepository GameRepo => _gameRepo ??= App.ServiceProvider.GetRequiredService<IGameRepository>();
+        private IFavoriteRepository FavRepo => _favRepo ??= App.ServiceProvider.GetRequiredService<IFavoriteRepository>();
+        private ISessionService Session => _session ??= App.ServiceProvider.GetRequiredService<ISessionService>();
+
+        public void FocusSearch()
         {
-            ActualizarColoresTarjetas(isLightMode);
+            TxtSearch.Focus();
+            TxtSearch.SelectAll();
         }
 
-        private void ActualizarColoresTarjetas(bool isLightMode)
+        private void ActualizarColoresTarjetas()
         {
-            var bgDark = Color.FromRgb(0x12, 0x12, 0x12);
-            var bgLight = Color.FromRgb(0xFF, 0xFF, 0xFF);
-            var cardBgDark = Color.FromRgb(0x20, 0x20, 0x20);
-            var cardBgLight = Color.FromRgb(0xF0, 0xF0, 0xF0);
-            var imgBgDark = Color.FromRgb(0x1C, 0x20, 0x30);
-            var imgBgLight = Color.FromRgb(0xE8, 0xE8, 0xE8);
-            var textDark = Colors.White;
-            var textLight = Color.FromRgb(0x1A, 0x1A, 0x1A);
-            var textSecDark = Color.FromRgb(0x88, 0x8E, 0x9E);
-            var textSecLight = Color.FromRgb(0x66, 0x66, 0x66);
-
             foreach (var tarjeta in _tarjetasCreadas)
             {
-                if (tarjeta.Background is SolidColorBrush brush)
-                {
-                    brush.Color = isLightMode ? cardBgDark : cardBgLight;
-                }
                 if (tarjeta.Child is StackPanel mainSp)
                 {
                     if (mainSp.Children.Count > 0 && mainSp.Children[0] is Border imgBorder)
                     {
                         if (imgBorder.Background is SolidColorBrush imgBrush)
-                        {
-                            imgBrush.Color = isLightMode ? imgBgDark : imgBgLight;
-                        }
+                            imgBrush.Color = Color.FromRgb(0x1C, 0x20, 0x30);
                     }
-                    ActualizarColoresStackPanel(mainSp, isLightMode, textDark, textLight, textSecDark, textSecLight);
+                    ActualizarColoresStackPanel(mainSp);
                 }
             }
         }
 
-        private void ActualizarColoresStackPanel(StackPanel sp, bool isLightMode, Color textDark, Color textLight, Color textSecDark, Color textSecLight)
+        private void ActualizarColoresStackPanel(StackPanel sp)
         {
             if (sp == null) return;
             foreach (var child in sp.Children)
             {
                 if (child is TextBlock tb)
                 {
-                    if (tb.FontWeight == FontWeights.Bold)
-                        tb.Foreground = new SolidColorBrush(isLightMode ? textDark : textLight);
-                    else
-                        tb.Foreground = new SolidColorBrush(isLightMode ? textSecDark : textSecLight);
+                    tb.Foreground = new SolidColorBrush(tb.FontWeight == FontWeights.Bold ? Colors.White : Color.FromRgb(0x88, 0x8E, 0x9E));
                 }
                 else if (child is StackPanel childSp)
                 {
-                    ActualizarColoresStackPanel(childSp, isLightMode, textDark, textLight, textSecDark, textSecLight);
-                }
-                else if (child is Border b && b.Child is TextBlock badgeText)
-                {
-                    badgeText.Foreground = new SolidColorBrush(Colors.White);
+                    ActualizarColoresStackPanel(childSp);
                 }
             }
         }
 
         private async void UserControl_Loaded(object sender, RoutedEventArgs e)
         {
-            MostrarLoader(true);
-            IniciarAnimacionSpinner();
+            MostrarSkeleton(true);
             try { await CargarJuegos(); }
-            finally { MostrarLoader(false); }
+            finally { MostrarSkeleton(false); }
         }
 
         private void MostrarLoader(bool mostrar) =>
             LoaderOverlay.Visibility = mostrar ? Visibility.Visible : Visibility.Collapsed;
 
-        private void IniciarAnimacionSpinner()
+        private void MostrarSkeleton(bool mostrar)
         {
-            if (this.Resources["SpinnerAnimation"] is Storyboard sb)
-                sb.Begin();
+            if (skeletonPanel == null) return;
+            skeletonPanel.Visibility = mostrar ? Visibility.Visible : Visibility.Collapsed;
+            if (mostrar)
+            {
+                foreach (var child in skeletonPanel.Children)
+                {
+                    if (child is Border skeleton && Resources["ShimmerAnimation"] is Storyboard sb)
+                        sb.Begin(skeleton);
+                }
+            }
+        }
+
+        private void TxtSearch_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (TxtSearch.Text == "Buscar juegos...")
+            {
+                TxtSearch.Text = "";
+                TxtSearch.Foreground = (System.Windows.Media.Brush)FindResource("TextMainBrush");
+            }
+        }
+
+        private void TxtSearch_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(TxtSearch.Text))
+            {
+                TxtSearch.Text = "Buscar juegos...";
+                TxtSearch.Foreground = (System.Windows.Media.Brush)FindResource("TextMutedBrush");
+                _searchText = null;
+            }
+            else
+            {
+                _searchText = TxtSearch.Text.Trim();
+            }
+            _currentPage = 1;
+            CardVisualHelper.FireAndForget(() => RecargarJuegosAsync(), "Error recargando juegos");
+        }
+
+        private async void TxtSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (TxtSearch.Text == "Buscar juegos..." || string.IsNullOrWhiteSpace(TxtSearch.Text))
+            {
+                _searchCts?.Cancel();
+                return;
+            }
+            _searchCts?.Cancel();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+            try
+            {
+                await Task.Delay(400, token);
+                if (!token.IsCancellationRequested)
+                {
+                    _searchText = TxtSearch.Text.Trim();
+                    _currentPage = 1;
+                    await RecargarJuegosAsync();
+                }
+            }
+            catch (TaskCanceledException) { }
+        }
+
+        private void TxtSearch_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter && TxtSearch.Text != "Buscar juegos..." && !string.IsNullOrWhiteSpace(TxtSearch.Text))
+            {
+                e.Handled = true;
+                _searchCts?.Cancel();
+                _searchText = TxtSearch.Text.Trim();
+                _currentPage = 1;
+                CardVisualHelper.FireAndForget(() => RecargarJuegosAsync(), "Error recargando juegos");
+            }
+        }
+
+        private async void CboGenre_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CboGenre.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            {
+                _genreFilter = string.IsNullOrEmpty(tag) ? null : tag;
+                _currentPage = 1;
+                await RecargarJuegosAsync();
+            }
+        }
+
+        private async void CboSort_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CboSort.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            {
+                _sortBy = tag;
+                _currentPage = 1;
+                await RecargarJuegosAsync();
+            }
+        }
+
+        private async Task RecargarJuegosAsync()
+        {
+            MostrarSkeleton(true);
+            try { await CargarJuegos(); }
+            finally { MostrarSkeleton(false); }
         }
 
         private async Task CargarJuegos()
         {
             try
             {
-                _totalGames = await _gameRepo.GetGameCountAsync();
+                _totalGames = await GameRepo.GetGameCountAsync(_searchText, _genreFilter);
                 _totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalGames / GamesPerPage));
                 if (_currentPage > _totalPages) _currentPage = _totalPages;
                 if (_currentPage < 1) _currentPage = 1;
                 
                 var offset = (_currentPage - 1) * GamesPerPage;
-                var juegos = await _gameRepo.GetGamesAsync(GamesPerPage, offset);
+                var juegos = await GameRepo.GetGamesAsync(GamesPerPage, offset, _searchText, _sortBy, _genreFilter);
                 juegosPanel.Children.Clear();
 
                 if (juegos.Count == 0)
                 {
+                    if (!string.IsNullOrWhiteSpace(_searchText))
+                    {
+                        EmptyTitle.Text = "Sin resultados";
+                        EmptySubtitle.Text = $"No se encontraron juegos para \"{_searchText}\"";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_genreFilter))
+                    {
+                        EmptyTitle.Text = "Sin resultados";
+                        EmptySubtitle.Text = $"No hay juegos en la categoría {_genreFilter}";
+                    }
+                    else
+                    {
+                        EmptyTitle.Text = "No hay juegos disponibles";
+                        EmptySubtitle.Text = "Los juegos aparecerán aquí cuando sean agregados";
+                    }
                     EmptyState.Visibility = Visibility.Visible;
                     return;
                 }
@@ -137,8 +233,8 @@ namespace PS2Desktop.Vistas
                 foreach (var juego in juegos)
                     juegosPanel.Children.Add(CrearTarjetaJuego(juego));
 
-                _ = CargarImagenesAsync(juegos);
-                
+                await CargarImagenesAsync(juegos);
+
                 TxtPageInfo.Text = _currentPage.ToString();
                 TxtTotalPages.Text = _totalPages.ToString();
                 BtnPrevPage.IsEnabled = _currentPage > 1;
@@ -146,7 +242,7 @@ namespace PS2Desktop.Vistas
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error cargando juegos: {ex.Message}", "Error");
+                ToastService.Instance.ShowError($"Error cargando juegos: {ex.Message}");
             }
         }
 
@@ -174,7 +270,7 @@ namespace PS2Desktop.Vistas
 
         private async Task CargarImagenesAsync(List<Game> juegos)
         {
-            const int maxConcurrent = 4;
+            var maxConcurrent = AppSettings.ImageConcurrency;
             using var semaphore = new SemaphoreSlim(maxConcurrent);
             var tasks = new List<Task>();
 
@@ -195,77 +291,22 @@ namespace PS2Desktop.Vistas
                         BitmapImage? bitmap2d = null;
                         BitmapImage? bitmapFallback = null;
 
-                        // Try 3D first
                         if (!string.IsNullOrEmpty(url3d))
-                        {
-                            try
-                            {
-                                var bytes3d = await _httpClient.GetByteArrayAsync(url3d);
-                                bitmap3d = await Dispatcher.InvokeAsync(() =>
-                                {
-                                    using var ms = new MemoryStream(bytes3d);
-                                    var bmp = new BitmapImage();
-                                    bmp.BeginInit();
-                                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                                    bmp.StreamSource = ms;
-                                    bmp.EndInit();
-                                    bmp.Freeze();
-                                    return bmp;
-                                });
-                            }
-                            catch { }
-                        }
+                            bitmap3d = await _imageCache.GetImageAsync(url3d);
 
-                        // Try 2D second
                         if (!string.IsNullOrEmpty(url2d))
-                        {
-                            try
-                            {
-                                var bytes2d = await _httpClient.GetByteArrayAsync(url2d);
-                                bitmap2d = await Dispatcher.InvokeAsync(() =>
-                                {
-                                    using var ms = new MemoryStream(bytes2d);
-                                    var bmp = new BitmapImage();
-                                    bmp.BeginInit();
-                                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                                    bmp.StreamSource = ms;
-                                    bmp.EndInit();
-                                    bmp.Freeze();
-                                    return bmp;
-                                });
-                            }
-                            catch { }
-                        }
+                            bitmap2d = await _imageCache.GetImageAsync(url2d);
 
-                        // Try fallback image_url third
                         if (!string.IsNullOrEmpty(urlFallback))
-                        {
-                            try
-                            {
-                                var bytesFallback = await _httpClient.GetByteArrayAsync(urlFallback);
-                                bitmapFallback = await Dispatcher.InvokeAsync(() =>
-                                {
-                                    using var ms = new MemoryStream(bytesFallback);
-                                    var bmp = new BitmapImage();
-                                    bmp.BeginInit();
-                                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                                    bmp.StreamSource = ms;
-                                    bmp.EndInit();
-                                    bmp.Freeze();
-                                    return bmp;
-                                });
-                            }
-                            catch { }
-                        }
+                            bitmapFallback = await _imageCache.GetImageAsync(urlFallback);
 
-                        // Determine primary (displayed) and secondary (on hover)
                         var primary = bitmap3d ?? bitmap2d ?? bitmapFallback;
                         var isPrimary3d = bitmap3d != null;
                         var secondary = (bitmap3d != null && bitmap2d != null) ? bitmap2d : 
                                         (bitmap3d != null && bitmapFallback != null) ? bitmapFallback : 
                                         (bitmap2d != null && bitmapFallback != null) ? bitmapFallback : null;
 
-                        if (primary == null) { semaphore.Release(); return; }
+                        if (primary == null) { primary = _placeholderImage; isPrimary3d = false; }
 
                         var backgroundColor = isPrimary3d ? Colors.Transparent : Color.FromRgb(28, 32, 48);
 
@@ -273,15 +314,10 @@ namespace PS2Desktop.Vistas
                         {
                             foreach (Border card in juegosPanel.Children)
                             {
-                                if (card.Tag == juego && card.Child is StackPanel stack && stack.Children.Count > 0
-                                    && stack.Children[0] is Border imgBorder && imgBorder.Child is Image img)
+                                if (card.Tag == juego && CardVisualHelper.TryGetCardImage(card, out var imgBorder, out var img))
                                 {
-                                    imgBorder.BeginAnimation(Border.OpacityProperty, null);
-                                    imgBorder.Opacity = 1;
-                                    imgBorder.Background = new SolidColorBrush(backgroundColor);
-                                    img.Source = primary;
-                                    img.Tag = secondary; // Store the hover image
-                                    img.BeginAnimation(Image.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3)));
+                                    CardVisualHelper.SetCardImage(card, primary, backgroundColor);
+                                    img.Tag = secondary;
 
                                     if (secondary != null)
                                     {
@@ -306,10 +342,22 @@ namespace PS2Desktop.Vistas
                             }
                         });
                     }
+                    catch (Exception ex)
+                    {
+                        await Dispatcher.InvokeAsync(() =>
+                            ToastService.Instance.ShowError($"Error cargando imagen: {ex.Message}")
+                        );
+                    }
                     finally { semaphore.Release(); }
                 }));
             }
-            await Task.WhenAll(tasks);
+            try { await Task.WhenAll(tasks); }
+            catch (Exception ex)
+            {
+                await Dispatcher.InvokeAsync(() =>
+                    ToastService.Instance.ShowError($"Error en carga de imágenes: {ex.Message}")
+                );
+            }
         }
 
         private static string TransformarGameId(string? gameId)
@@ -345,11 +393,10 @@ namespace PS2Desktop.Vistas
             };
 
             var stackPanel = new StackPanel();
-            var isLight = AppSettings.IsLightMode;
             var imageBorder = new Border
             {
                 CornerRadius = new CornerRadius(12, 12, 0, 0),
-                Background = new SolidColorBrush(isLight ? Color.FromRgb(0xE8, 0xE8, 0xE8) : Color.FromRgb(0x1C, 0x20, 0x30)),
+                Background = new SolidColorBrush(Color.FromRgb(0x1C, 0x20, 0x30)),
                 Height = cardHeight, ClipToBounds = true
             };
             var image = new Image
@@ -362,7 +409,62 @@ namespace PS2Desktop.Vistas
             imageBorder.BeginAnimation(Border.OpacityProperty,
                 new DoubleAnimation(0.3, 0.7, TimeSpan.FromSeconds(0.8)) { RepeatBehavior = RepeatBehavior.Forever, AutoReverse = true });
             imageBorder.Child = image;
-            stackPanel.Children.Add(imageBorder);
+
+            var imageContainer = new Grid();
+            imageContainer.Children.Add(imageBorder);
+
+            if (Session.IsLoggedIn)
+            {
+                var favBtn = new Border
+                {
+                    Width = 28, Height = 28, CornerRadius = new CornerRadius(14),
+                    Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)),
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Margin = new Thickness(0, 8, 8, 0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    Tag = juego.id
+                };
+                var favIcon = new TextBlock
+                {
+                    Text = "♡",
+                    Foreground = new SolidColorBrush(Colors.White),
+                    FontSize = 14,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                favBtn.Child = favIcon;
+                favBtn.MouseDown += async (s, e) =>
+                {
+                    e.Handled = true;
+                    if (Session.CurrentUser == null) return;
+                    await FavRepo.ToggleFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
+                    var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
+                    favIcon.Text = isFav ? "♥" : "♡";
+                    favIcon.Foreground = isFav
+                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
+                        : new SolidColorBrush(Colors.White);
+                };
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        if (Session.CurrentUser == null) return;
+                        var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                            favIcon.Text = isFav ? "♥" : "♡";
+                            favIcon.Foreground = isFav
+                                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
+                                : new SolidColorBrush(Colors.White);
+                        });
+                    }
+                    catch (Exception ex) { LoggingService.Instance.Error("Error checking favorite status", ex); }
+                });
+                imageContainer.Children.Add(favBtn);
+            }
+
+            stackPanel.Children.Add(imageContainer);
 
             var innerPanel = new StackPanel { Margin = new Thickness(12, 10, 12, 12) };
             innerPanel.Children.Add(new TextBlock
@@ -419,8 +521,8 @@ namespace PS2Desktop.Vistas
             stackPanel.Children.Add(innerPanel);
             border.Child = stackPanel;
 
-            var defaultBg = isLight ? Color.FromRgb(0xF0, 0xF0, 0xF0) : Color.FromRgb(0x12, 0x12, 0x12);
-            var hoverBg = isLight ? Color.FromRgb(0xE0, 0xE0, 0xE0) : Color.FromRgb(0x2A, 0x2A, 0x2A);
+            var defaultBg = Color.FromRgb(0x12, 0x12, 0x12);
+            var hoverBg = Color.FromRgb(0x2A, 0x2A, 0x2A);
             border.Background = new SolidColorBrush(defaultBg);
 
             border.MouseEnter += (s, e) =>
