@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="920" d:DesignWidth="1020"
-             Background="#22272E">
+             Background="#121212">
 
     <UserControl.Resources>
         <Style x:Key="ToolTabButton" TargetType="RadioButton">
