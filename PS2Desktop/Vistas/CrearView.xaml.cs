@@ -269,18 +269,33 @@ namespace PS2Desktop.Vistas
         {
             if (sender is Button btn && btn.CommandParameter is Guid id)
             {
-                var result = MessageBox.Show("¿Eliminar este elemento?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                var item = btn.DataContext as ItemEntry;
+                var nombre = item?.Nombre ?? "este elemento";
+                var tipo = item?.Tipo ?? "elemento";
+                var result = MessageBox.Show(
+                    $"¿Eliminar {tipo.ToLower()} \"{nombre}\"?\n\nEsta acción no se puede deshacer.",
+                    "Confirmar eliminación",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
                 if (result != MessageBoxResult.Yes) return;
 
+                btn.IsEnabled = false;
+                btn.Content = "Eliminando...";
                 try
                 {
-                    await _themeRepo.DeleteThemeAsync(id);
-                    await _gameRepo.DeleteGameAsync(id);
+                    if (item?.Tipo == "Tema")
+                        await _themeRepo.DeleteThemeAsync(id);
+                    else
+                        await _gameRepo.DeleteGameAsync(id);
+
+                    ToastService.Instance.ShowSuccess($"{tipo} eliminado correctamente");
                     BtnLoadItems_Click(null, null);
                 }
                 catch (Exception ex)
                 {
                     ToastService.Instance.ShowError("Error: " + ex.Message);
+                    btn.IsEnabled = true;
+                    btn.Content = "ELIMINAR";
                 }
             }
         }

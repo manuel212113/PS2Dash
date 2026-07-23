@@ -1,0 +1,884 @@
+<UserControl x:Class="PS2Desktop.Vistas.HerramientasView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="920" d:DesignWidth="1020"
+             Background="#22272E">
+
+    <UserControl.Resources>
+        <Style x:Key="ToolTabButton" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="GroupName" Value="Tabs"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6"
+                                Padding="14,0" VerticalAlignment="Center">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#C9D1D9"/>
+                                <Setter TargetName="border" Property="Background" Value="#2D333B"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="border" Property="Background" Value="#008080"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ToolCard" TargetType="Border">
+            <Setter Property="Background" Value="#2D333B"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="24"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="ToolLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="ToolInput" TargetType="TextBox">
+            <Setter Property="Background" Value="#1C2128"/>
+            <Setter Property="Foreground" Value="#C9D1D9"/>
+            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CaretBrush" Value="#C9D1D9"/>
+        </Style>
+
+        <Style x:Key="AccentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#008080"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#009999"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#006666"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
+                                <Setter Property="Foreground" Value="#484F58"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#DA3633"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E5534B"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#B62324"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
+                                <Setter Property="Foreground" Value="#484F58"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GhostButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#2D333B"/>
+                                <Setter Property="Foreground" Value="#C9D1D9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="#484F58"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#21262D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MediumButton" TargetType="Button">
+            <Setter Property="Background" Value="#444C56"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                CornerRadius="3" Padding="12,6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#545D68"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#21262D"/>
+                                <Setter Property="Foreground" Value="#484F58"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SummaryBox" TargetType="Border">
+            <Setter Property="Background" Value="#1C2128"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="ProgressTrack" TargetType="Border">
+            <Setter Property="Background" Value="#373E47"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Height" Value="8"/>
+        </Style>
+
+        <Style x:Key="ProgressFill" TargetType="Border">
+            <Setter Property="Background" Value="#008080"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Width" Value="0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="True">
+        <StackPanel Margin="30,24,30,32">
+
+            <TextBlock Text="Herramientas OPL" Foreground="White" FontSize="26" FontWeight="Bold" Margin="0,0,0,4"/>
+            <TextBlock Text="Gestiona imágenes de disco, conversión, arte y más para Open PS2 Loader"
+                       Foreground="#8B949E" FontSize="13" Margin="0,0,0,20"/>
+
+            <Border Background="#1C2128" CornerRadius="8" Padding="4" Margin="0,0,0,20"
+                    BorderBrush="#373E47" BorderThickness="1">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="TabArchivos" Content="Lista de Archivos" Style="{StaticResource ToolTabButton}"
+                                     IsChecked="True" Click="Tab_Click"/>
+                        <RadioButton x:Name="TabUlCfg" Content="Lista de UL (ul.cfg)" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
+                        <RadioButton x:Name="TabBinToIso" Content="Lista de BIN" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
+                        <RadioButton x:Name="TabFat32" Content="Formato FAT32" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
+                        <RadioButton x:Name="TabIsoToUl" Content="Config OPL" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
+                        <RadioButton x:Name="TabArt" Content="Acerca de" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ===== TAB: Lista de Archivos ===== -->
+            <StackPanel x:Name="PanelArchivos" Visibility="Visible">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Gestor de Archivos UL" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Explora, renombra y elimina juegos en formato UL en tu unidad USB."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Style="{StaticResource SummaryBox}">
+                                <StackPanel>
+                                    <TextBlock Text="Total Juegos" Foreground="#8B949E" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="TxtTotalJuegos" Text="0" Foreground="#008080" FontSize="22" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="2" Style="{StaticResource SummaryBox}">
+                                <StackPanel>
+                                    <TextBlock Text="Tamaño Total" Foreground="#8B949E" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="TxtTamanoTotal" Text="0 GB" Foreground="#C9D1D9" FontSize="22" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="4" Style="{StaticResource SummaryBox}">
+                                <StackPanel>
+                                    <TextBlock Text="Espacio Libre" Foreground="#8B949E" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="TxtEspacioLibre" Text="0 GB" Foreground="#238636" FontSize="22" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="6" Style="{StaticResource SummaryBox}">
+                                <StackPanel>
+                                    <TextBlock Text="Tamaño Total Disco" Foreground="#8B949E" FontSize="11" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="TxtTamanoDisco" Text="0 GB" Foreground="#C9D1D9" FontSize="22" FontWeight="Bold" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Unidad" Style="{StaticResource ToolLabel}"/>
+                                <ComboBox x:Name="CmbFileDrive" Background="#1C2128" Foreground="#C9D1D9"
+                                          BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                                          DisplayMemberPath="Text" SelectedValuePath="Tag"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Explorar" Style="{StaticResource AccentButtonStyle}"
+                                    Height="38" Width="110" FontSize="13" VerticalAlignment="Bottom" Margin="0,24,0,0"
+                                    Click="BtnExploreFiles_Click"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="36">
+                                <TextBlock x:Name="LblFilePath" Text="Selecciona una unidad para explorar..."
+                                           Foreground="#484F58" VerticalAlignment="Center" Margin="10,0" FontSize="12"/>
+                            </Border>
+                            <Button Grid.Column="2" Content="Subir" Style="{StaticResource MediumButton}"
+                                    Height="36" Width="70" FontSize="12"/>
+                            <Button Grid.Column="4" Content="Actualizar" Style="{StaticResource MediumButton}"
+                                    Height="36" Width="80" FontSize="12"/>
+                        </Grid>
+
+                        <Border Background="#1C2128" CornerRadius="6" BorderBrush="#373E47" BorderThickness="1" Margin="0,0,0,12">
+                            <DataGrid x:Name="DgArchivos" AutoGenerateColumns="False" Background="Transparent"
+                                      BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                      CanUserAddRows="False" SelectionMode="Single" RowBackground="#2D333B"
+                                      AlternatingRowBackground="#252C35" Foreground="#C9D1D9" FontSize="12"
+                                      CanUserResizeColumns="True" CanUserSortColumns="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Estado" Width="70" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#238636"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Game ID" Binding="{Binding GameId}" Width="100" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#008080"/>
+                                                <Setter Property="FontFamily" Value="Consolas"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#C9D1D9"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tipo" Binding="{Binding Type}" Width="70" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeDisplay}" Width="90" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="TextAlignment" Value="Right"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Partes" Binding="{Binding Parts}" Width="60" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="TextAlignment" Value="Center"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Progreso" Width="80" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#008080"/>
+                                                <Setter Property="TextAlignment" Value="Center"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Ruta completa" Binding="{Binding FullPath}" Width="220" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#484F58"/>
+                                                <Setter Property="FontFamily" Value="Consolas"/>
+                                                <Setter Property="FontSize" Value="11"/>
+                                                <Setter Property="Padding" Value="6,5"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#373E47"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#008080"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#1C2128"/>
+                                        <Setter Property="Foreground" Value="#8B949E"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="Padding" Value="6,8"/>
+                                        <Setter Property="BorderBrush" Value="#373E47"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                            </DataGrid>
+                        </Border>
+
+                        <Border Background="#1C2128" CornerRadius="6" Margin="0,0,0,12" MinHeight="120" MaxHeight="250"
+                                BorderBrush="#373E47" BorderThickness="1" Visibility="Collapsed">
+                            <ListView x:Name="LvFiles" Background="Transparent" BorderThickness="0"
+                                      Foreground="#C9D1D9" FontSize="13">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Nombre" Width="280" DisplayMemberBinding="{Binding Name}"/>
+                                        <GridViewColumn Header="Tipo" Width="80" DisplayMemberBinding="{Binding Type}"/>
+                                        <GridViewColumn Header="Tamaño" Width="100" DisplayMemberBinding="{Binding SizeDisplay}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+
+                        <TextBlock Text="Acciones" Foreground="#8B949E" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <UniformGrid Columns="4" Margin="0,0,0,12">
+                            <Button Content="Eliminar juego" Style="{StaticResource MediumButton}" Height="34" Margin="0,0,6,6"/>
+                            <Button Content="Descargar ART..." Style="{StaticResource MediumButton}" Height="34" Margin="0,0,6,6"/>
+                            <Button Content="Obtener nombre" Style="{StaticResource MediumButton}" Height="34" Margin="0,0,6,6"/>
+                            <Button Content="Recuperar ul.cfg" Style="{StaticResource MediumButton}" Height="34" Margin="0,0,6,6"/>
+                        </UniformGrid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <Button x:Name="BtnRenameFile" Content="Renombrar" Style="{StaticResource GhostButtonStyle}"
+                                    Height="36" Width="110" FontSize="13" Click="BtnRenameFile_Click" IsEnabled="False"/>
+                            <Button x:Name="BtnDeleteFile" Content="Eliminar" Style="{StaticResource DangerButtonStyle}"
+                                    Height="36" Width="110" FontSize="13" Margin="8,0,0,0" Click="BtnDeleteFile_Click" IsEnabled="False"/>
+                        </StackPanel>
+
+                        <Border Background="#1C2128" CornerRadius="6" Padding="16,12" BorderBrush="#373E47" BorderThickness="1">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="14"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Progreso" Foreground="#C9D1D9" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="0%" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                                <Border Grid.Row="1" Style="{StaticResource ProgressTrack}">
+                                    <Border x:Name="FileProgressBar" Style="{StaticResource ProgressFill}"/>
+                                </Border>
+                                <TextBlock Grid.Row="2" Text="Listo" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+
+                                <TextBlock Grid.Row="4" Text="Escala OPLUtil" Foreground="#8B949E" FontSize="12"
+                                           FontWeight="SemiBold"/>
+                                <Grid Grid.Row="5" Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="56"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="56"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Slider x:Name="SliderScale" Minimum="0.5" Maximum="3.0" Value="1.0"
+                                            Foreground="#008080" TickFrequency="0.1"
+                                            VerticalAlignment="Center" Height="22"/>
+                                    <TextBlock Grid.Column="2" Text="W:" Foreground="#8B949E" FontSize="11"
+                                               VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                    <TextBox Grid.Column="3" x:Name="TxtOplWidth" Style="{StaticResource ToolInput}"
+                                             Height="26" FontSize="11" Padding="4,3" Text="640"/>
+                                    <TextBlock Grid.Column="4" Text="H:" Foreground="#8B949E" FontSize="11"
+                                               VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0"/>
+                                    <TextBox Grid.Column="5" x:Name="TxtOplHeight" Style="{StaticResource ToolInput}"
+                                             Height="26" FontSize="11" Padding="4,3" Text="448"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== TAB: Lista de UL (ul.cfg) ===== -->
+            <StackPanel x:Name="PanelUlCfg" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Gestor de ul.cfg" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Visualiza, crea y edita el archivo ul.cfg que usa OPL para listar los juegos en USB."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Unidad" Style="{StaticResource ToolLabel}"/>
+                                <ComboBox x:Name="CmbCfgDrive" Background="#1C2128" Foreground="#C9D1D9"
+                                          BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                                          DisplayMemberPath="Text" SelectedValuePath="Tag"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Cargar" Style="{StaticResource AccentButtonStyle}"
+                                    Height="38" Width="100" FontSize="13" VerticalAlignment="Bottom" Margin="0,24,0,0"
+                                    Click="BtnLoadCfg_Click"/>
+                        </Grid>
+
+                        <Border Background="#1C2128" CornerRadius="6" Margin="0,12,0,0" MinHeight="200" MaxHeight="400"
+                                BorderBrush="#373E47" BorderThickness="1">
+                            <DataGrid x:Name="DgUlGames" AutoGenerateColumns="False" Background="Transparent"
+                                      BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                      CanUserAddRows="False" SelectionMode="Single" SelectionChanged="DgUlGames_SelectionChanged"
+                                      RowBackground="#2D333B" AlternatingRowBackground="#252C35"
+                                      Foreground="#C9D1D9" FontSize="12">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#C9D1D9"/>
+                                                <Setter Property="FontSize" Value="13"/>
+                                                <Setter Property="Padding" Value="6,6"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Game ID" Binding="{Binding GameId}" Width="120" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#008080"/>
+                                                <Setter Property="FontFamily" Value="Consolas"/>
+                                                <Setter Property="FontSize" Value="12"/>
+                                                <Setter Property="Padding" Value="6,6"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Partes" Binding="{Binding Parts}" Width="60" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="TextAlignment" Value="Center"/>
+                                                <Setter Property="Padding" Value="6,6"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Media" Width="60" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="TextAlignment" Value="Center"/>
+                                                <Setter Property="Padding" Value="6,6"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                    <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeDisplay}" Width="90" IsReadOnly="True">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#8B949E"/>
+                                                <Setter Property="TextAlignment" Value="Right"/>
+                                                <Setter Property="Padding" Value="6,6"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#373E47"/>
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="#008080"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#1C2128"/>
+                                        <Setter Property="Foreground" Value="#8B949E"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="Padding" Value="6,8"/>
+                                        <Setter Property="BorderBrush" Value="#373E47"/>
+                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                            </DataGrid>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <Button x:Name="BtnDeleteGame" Content="Eliminar juego seleccionado"
+                                    Style="{StaticResource DangerButtonStyle}" Height="36" Width="200"
+                                    FontSize="13" Click="BtnDeleteGame_Click" IsEnabled="False"/>
+                            <TextBlock x:Name="TxtCfgStatus" Foreground="#8B949E" FontSize="12"
+                                       VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== TAB: Lista de BIN ===== -->
+            <StackPanel x:Name="PanelBinToIso" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Convertir BIN a ISO" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Convierte archivos BIN (imágenes de disco PS1/PS2) a formato ISO estándar."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="Archivo BIN" Style="{StaticResource ToolLabel}"/>
+                        <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblBinPath" Text="Selecciona un archivo .bin..." Foreground="#484F58"
+                                           VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                        Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnSelectBin_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Guardar como ISO" Style="{StaticResource ToolLabel}" Margin="0,12,0,6"/>
+                        <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblBinOutput" Text="Selecciona destino..." Foreground="#484F58"
+                                           VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                        Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnSelectBinOutput_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <Grid Margin="0,12,0,0" x:Name="BinProgressPanel" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtBinProgress" Foreground="#C9D1D9" FontSize="12"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtBinPercent" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                            <Border Grid.Row="1" Style="{StaticResource ProgressTrack}">
+                                <Border x:Name="BinProgressBar" Style="{StaticResource ProgressFill}"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" x:Name="TxtBinStatus" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button x:Name="BtnConvertBin" Content="Convertir a ISO" Style="{StaticResource AccentButtonStyle}"
+                                    Height="40" Width="180" FontSize="14" Click="BtnConvertBin_Click"/>
+                            <Button x:Name="BtnCancelBin" Content="Cancelar" Style="{StaticResource DangerButtonStyle}"
+                                    Height="40" Width="100" FontSize="13" Margin="10,0,0,0" Visibility="Collapsed"
+                                    Click="BtnCancelBin_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== TAB: Formato FAT32 ===== -->
+            <StackPanel x:Name="PanelFat32" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Formatear a FAT32" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Formatea una unidad USB o HDD a FAT32 con soporte para discos de hasta 2TB. Necesario para que OPL lea juegos desde USB."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <Border Background="#3D1F1A" CornerRadius="6" Padding="14,10" Margin="0,0,0,12"
+                                BorderBrush="#DA3633" BorderThickness="1">
+                            <TextBlock Text="&#x26A0; Esta operación borrará TODOS los datos de la unidad seleccionada. Asegúrate de hacer backup antes de continuar."
+                                       Foreground="#F85149" FontSize="12" TextWrapping="Wrap"/>
+                        </Border>
+
+                        <TextBlock Text="Unidad a formatear" Style="{StaticResource ToolLabel}"/>
+                        <ComboBox x:Name="CmbFat32Drive" Background="#1C2128" Foreground="#C9D1D9"
+                                  BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                                  DisplayMemberPath="Text" SelectedValuePath="Tag"/>
+
+                        <TextBlock Text="Etiqueta del volumen (opcional)" Style="{StaticResource ToolLabel}" Margin="0,12,0,6"/>
+                        <TextBox x:Name="TxtFat32Label" Style="{StaticResource ToolInput}" MaxLength="11"/>
+
+                        <Grid Margin="0,12,0,0" x:Name="Fat32ProgressPanel" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtFat32Progress" Foreground="#C9D1D9" FontSize="12"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtFat32Percent" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                            <Border Grid.Row="1" Background="#373E47" CornerRadius="3" Height="8">
+                                <Border x:Name="Fat32ProgressBar" Background="#DA3633" CornerRadius="3"
+                                        HorizontalAlignment="Left" Width="0"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" x:Name="TxtFat32Status" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+                        </Grid>
+
+                        <Button x:Name="BtnFormatFat32" Content="Formatear a FAT32" Style="{StaticResource DangerButtonStyle}"
+                                Height="44" Width="200" FontSize="14" FontWeight="SemiBold" Margin="0,16,0,0"
+                                Click="BtnFormatFat32_Click"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== TAB: Config OPL ===== -->
+            <StackPanel x:Name="PanelIsoToUl" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Convertir ISO a formato UL (USBExtreme)" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Divide archivos ISO grandes en partes de 4GB para FAT32 y genera el ul.cfg necesario para OPL."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="Archivo ISO" Style="{StaticResource ToolLabel}"/>
+                        <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblIsoPath" Text="Selecciona un archivo .iso..." Foreground="#484F58"
+                                           VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                        Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnSelectIso_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Nombre del juego" Style="{StaticResource ToolLabel}"/>
+                                <TextBox x:Name="TxtIsoGameName" Style="{StaticResource ToolInput}" MaxLength="32"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Unidad de destino" Style="{StaticResource ToolLabel}"/>
+                                <ComboBox x:Name="CmbIsoDrive" Background="#1C2128" Foreground="#C9D1D9"
+                                          BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                                          DisplayMemberPath="Text" SelectedValuePath="Tag"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Game ID" Style="{StaticResource ToolLabel}"/>
+                                <TextBox x:Name="TxtIsoGameId" Style="{StaticResource ToolInput}" IsReadOnly="True"
+                                         Text="Se detecta automáticamente del ISO"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Tipo de disco" Style="{StaticResource ToolLabel}"/>
+                                <TextBox x:Name="TxtIsoMediaType" Style="{StaticResource ToolInput}" IsReadOnly="True"
+                                         Text="Se detecta automáticamente"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Background="#162028" CornerRadius="6" Padding="14,10" Margin="0,12,0,0" Visibility="Collapsed"
+                                x:Name="IsoInfoCard" BorderBrush="#008080" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock x:Name="TxtIsoInfo" Foreground="#008080" FontSize="12" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Grid Margin="0,12,0,0" x:Name="IsoProgressPanel" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtIsoProgress" Foreground="#C9D1D9" FontSize="12"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtIsoPercent" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                            <Border Grid.Row="1" Style="{StaticResource ProgressTrack}">
+                                <Border x:Name="IsoProgressBar" Style="{StaticResource ProgressFill}"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" x:Name="TxtIsoStatus" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button x:Name="BtnConvertIso" Content="Convertir a UL" Style="{StaticResource AccentButtonStyle}"
+                                    Height="40" Width="180" FontSize="14" Click="BtnConvertIso_Click"/>
+                            <Button x:Name="BtnCancelIso" Content="Cancelar" Style="{StaticResource DangerButtonStyle}"
+                                    Height="40" Width="100" FontSize="13" Margin="10,0,0,0" Visibility="Collapsed"
+                                    Click="BtnCancelIso_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ===== TAB: Acerca de ===== -->
+            <StackPanel x:Name="PanelArt" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Descargar ART para OPL" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Descarga portadas (COV), iconos (ICO) e imágenes de fondo (BG) de los juegos desde repositorios públicos."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="Game ID del juego" Style="{StaticResource ToolLabel}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtArtGameId" Style="{StaticResource ToolInput}"
+                                     Tag="Ej: SLUS-20002" MaxLength="20"/>
+                            <Button x:Name="BtnDescargarArt" Content="Descargar" Style="{StaticResource AccentButtonStyle}"
+                                    Height="38" Width="120" FontSize="13" Click="BtnDescargarArt_Click"/>
+                        </Grid>
+
+                        <TextBlock Text="Guardar en" Style="{StaticResource ToolLabel}" Margin="0,12,0,6"/>
+                        <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblArtOutput" Text="Selecciona carpeta destino..." Foreground="#484F58"
+                                           VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                        Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnSelectArtOutput_Click"/>
+                            </Grid>
+                        </Border>
+
+                        <Grid Margin="0,12,0,0" x:Name="ArtProgressPanel" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtArtProgress" Foreground="#C9D1D9" FontSize="12"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtArtPercent" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                            <Border Grid.Row="1" Style="{StaticResource ProgressTrack}">
+                                <Border x:Name="ArtProgressBar" Style="{StaticResource ProgressFill}"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" x:Name="TxtArtStatus" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+                        </Grid>
+
+                        <WrapPanel x:Name="ArtPreviewPanel" Margin="0,16,0,0" Visibility="Collapsed"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

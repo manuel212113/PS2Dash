@@ -230,8 +230,15 @@ namespace PS2Desktop.Vistas
                 }
 
                 EmptyState.Visibility = Visibility.Collapsed;
-                foreach (var juego in juegos)
-                    juegosPanel.Children.Add(CrearTarjetaJuego(juego));
+                for (int i = 0; i < juegos.Count; i++)
+                {
+                    var card = CrearTarjetaJuego(juegos[i]);
+                    card.Opacity = 0;
+                    juegosPanel.Children.Add(card);
+                    var delay = TimeSpan.FromSeconds(i * 0.05);
+                    var anim = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3)) { BeginTime = delay };
+                    card.BeginAnimation(OpacityProperty, anim);
+                }
 
                 await CargarImagenesAsync(juegos);
 
@@ -415,52 +422,7 @@ namespace PS2Desktop.Vistas
 
             if (Session.IsLoggedIn)
             {
-                var favBtn = new Border
-                {
-                    Width = 28, Height = 28, CornerRadius = new CornerRadius(14),
-                    Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)),
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(0, 8, 8, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand,
-                    Tag = juego.id
-                };
-                var favIcon = new TextBlock
-                {
-                    Text = "♡",
-                    Foreground = new SolidColorBrush(Colors.White),
-                    FontSize = 14,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                favBtn.Child = favIcon;
-                favBtn.MouseDown += async (s, e) =>
-                {
-                    e.Handled = true;
-                    if (Session.CurrentUser == null) return;
-                    await FavRepo.ToggleFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
-                    var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
-                    favIcon.Text = isFav ? "♥" : "♡";
-                    favIcon.Foreground = isFav
-                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
-                        : new SolidColorBrush(Colors.White);
-                };
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (Session.CurrentUser == null) return;
-                        var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, juego.id, "game");
-                        await Dispatcher.InvokeAsync(() =>
-                        {
-                            favIcon.Text = isFav ? "♥" : "♡";
-                            favIcon.Foreground = isFav
-                                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
-                                : new SolidColorBrush(Colors.White);
-                        });
-                    }
-                    catch (Exception ex) { LoggingService.Instance.Error("Error checking favorite status", ex); }
-                });
+                var favBtn = CardVisualHelper.CreateFavButtonCard(juego.id, "game", () => Task.CompletedTask);
                 imageContainer.Children.Add(favBtn);
             }
 

@@ -22,7 +22,7 @@ namespace PS2Desktop.Services
             _connectionString = dbInit.ConnectionString;
         }
 
-        public async Task<List<Theme>> GetThemesAsync(string? search = null, string? sortBy = null)
+        public async Task<List<Theme>> GetThemesAsync(int limit = 50, int offset = 0, string? search = null, string? sortBy = null)
         {
             var list = new List<Theme>();
             await using var conn = new NpgsqlConnection(_connectionString);
@@ -32,10 +32,12 @@ namespace PS2Desktop.Services
                 where = "WHERE (nombre ILIKE @search OR autor ILIKE @search)";
             if (!SortClauses.TryGetValue(sortBy ?? "", out var order))
                 order = "created_at DESC";
-            var sql = $"SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, created_at FROM public.themes {where} ORDER BY {order}";
+            var sql = $"SELECT id, nombre, autor, descripcion, caracteristicas, video_demo, link_descarga, image_url, created_at FROM public.themes {where} ORDER BY {order} LIMIT @limit OFFSET @offset";
             await using var cmd = new NpgsqlCommand(sql, conn);
             if (!string.IsNullOrWhiteSpace(search))
                 cmd.Parameters.AddWithValue("@search", $"%{search}%");
+            cmd.Parameters.AddWithValue("@limit", limit);
+            cmd.Parameters.AddWithValue("@offset", offset);
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {

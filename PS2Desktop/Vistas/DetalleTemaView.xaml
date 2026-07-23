@@ -3,100 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
              mc:Ignorable="d" 
              d:DesignHeight="1200" d:DesignWidth="1200"
              Background="#0A0A10">
 
     <UserControl.Resources>
-        <Style x:Key="NavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#44000000"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Height" Value="50"/>
-            <Setter Property="FontSize" Value="24"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border CornerRadius="25" Background="{TemplateBinding Background}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#8800ADFF"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="ThumbButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <ContentPresenter/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Viewbox x:Key="IconPause" Stretch="Uniform">
-            <Canvas Width="24" Height="24">
-                <Path Fill="White" Data="M19 0H5C2.243 0 0 2.243 0 5v14c0 2.757 2.243 5 5 5h14c2.757 0 5-2.243 5-5V5c0-2.757-2.243-5-5-5Zm3 19c0 1.654-1.346 3-3 3H5c-1.654 0-3-1.346-3-3V5c0-1.654 1.346-3 3-3h14c1.654 0 3 1.346 3 3v14Zm-7-11v8c0 .553-.447 1-1 1s-1-.447-1-1V8c0-.552 .447-1 1-1s1 .448 1 1Zm-4 0v8c0 .553-.448 1-1 1s-1-.447-1-1V8c0-.552 .448-1 1-1s1 .448 1 1Z"/>
-            </Canvas>
-        </Viewbox>
-        <Viewbox x:Key="IconPlay" Stretch="Uniform">
-            <Canvas Width="24" Height="24">
-                <Path Fill="White" Data="m19 24h-14a5.006 5.006 0 0 1 -5-5v-14a5.006 5.006 0 0 1 5-5h14a5.006 5.006 0 0 1 5 5v14a5.006 5.006 0 0 1 -5 5zm-14-22a3 3 0 0 0 -3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-14a3 3 0 0 0 -3-3zm4.342 15.005a2.368 2.368 0 0 1 -1.186-.323 2.313 2.313 0 0 1 -1.164-2.021v-5.322a2.337 2.337 0 0 1 3.5-2.029l5.278 2.635a2.336 2.336 0 0 1 .049 4.084l-5.376 2.687a2.2 2.2 0 0 1 -1.101.289zm-.025-8a.314.314 0 0 0 -.157.042.327.327 0 0 0 -.168.292v5.322a.337.337 0 0 0 .5.293l5.376-2.688a.314.314 0 0 0 .12-.266.325.325 0 0 0 -.169-.292l-5.274-2.635a.462.462 0 0 0 -.228-.068z"/>
-            </Canvas>
-        </Viewbox>
-        <Viewbox x:Key="IconVolOn" Stretch="Uniform">
-            <Canvas Width="24" Height="24">
-                <Path Fill="White" Data="M20.807 4.29a1 1 0 0 0-1.415 1.415 8.913 8.913 0 0 1 0 12.59 1 1 0 0 0 1.415 1.415A10.916 10.916 0 0 0 20.807 4.29Z"/>
-                <Path Fill="White" Data="M18.1 7.291A1 1 0 0 0 16.68 8.706a4.662 4.662 0 0 1 0 6.588A1 1 0 0 0 18.1 16.709 6.666 6.666 0 0 0 18.1 7.291Z"/>
-                <Path Fill="White" Data="M13.82.2A12.054 12.054 0 0 0 6.266 5H5a5.008 5.008 0 0 0-5 5v4a5.008 5.008 0 0 0 5 5H6.266A12.059 12.059 0 0 0 13.82 23.8a.917.917 0 0 0 .181.017 1 1 0 0 0 1-1V1.186A1 1 0 0 0 13.82.2ZM13 21.535a10.083 10.083 0 0 1-5.371-4.08A1 1 0 0 0 6.792 17H5a3 3 0 0 1-3-3V10A3 3 0 0 1 5 7h1.8a1 1 0 0 0 .837-.453A10.079 10.079 0 0 1 13 2.465Z"/>
-            </Canvas>
-        </Viewbox>
-
-        <Style x:Key="ModernSlider" TargetType="Slider">
-            <Setter Property="Background" Value="#33FFFFFF"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Slider">
-                        <Grid VerticalAlignment="Center">
-                            <Border x:Name="TrackBackground" Height="4" Background="{TemplateBinding Background}" CornerRadius="2"/>
-                            <Track x:Name="PART_Track">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="Slider.DecreaseLarge">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton">
-                                                <Border Height="4" Background="#00ADFF" CornerRadius="2"/>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.DecreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Width="14" Height="14">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Ellipse Fill="White"/>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                            </Track>
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto" Focusable="True" PreviewMouseWheel="ScrollViewer_PreviewMouseWheel" PreviewKeyDown="MainScrollViewer_PreviewKeyDown">
@@ -112,6 +23,8 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,30">
+                <Button x:Name="btnVolver" Content="&#x25C0; Volver" Style="{StaticResource GhostButtonStyle}"
+                        HorizontalAlignment="Left" Margin="0,0,0,10" Click="btnVolver_Click"/>
                 <TextBlock x:Name="lblTitle" Text="Cargando..." Foreground="White" FontSize="42" FontWeight="Bold"/>
                 <StackPanel x:Name="RatingPanel" Orientation="Horizontal" Margin="0,10,0,25" Visibility="Collapsed">
                     <TextBlock x:Name="lblStars" Foreground="White" FontSize="16" Margin="0,0,5,0"/>
@@ -121,103 +34,21 @@
             </StackPanel>
 
             <Grid Grid.Row="1" Grid.Column="0" Margin="0,0,20,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <StackPanel Grid.Row="0">
-                    <!-- Video (sin controles dentro) -->
-                    <Border x:Name="PlayerBorder" CornerRadius="20,20,0,0" Background="Black" ClipToBounds="True" Height="480"
-                            MouseEnter="PlayerBorder_MouseEnter" MouseMove="PlayerBorder_MouseMove" MouseLeave="PlayerBorder_MouseLeave">
-                        <Grid>
-                            <vlc:VideoView x:Name="VideoPlayerDetalle" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-
-                            <StackPanel x:Name="LoadingPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
-                                <ContentControl Width="80" Height="80" RenderTransformOrigin="0.5,0.5">
-                                    <ContentControl.RenderTransform>
-                                        <ScaleTransform x:Name="LoadingScale" ScaleX="1" ScaleY="1"/>
-                                    </ContentControl.RenderTransform>
-                                    <ContentControl.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" Storyboard.TargetProperty="ScaleX" To="1.1" Duration="0:0:0.8"/>
-                                                    <DoubleAnimation Storyboard.TargetName="LoadingScale" Storyboard.TargetProperty="ScaleY" To="1.1" Duration="0:0:0.8"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </ContentControl.Triggers>
-                                    <Viewbox Stretch="Uniform">
-                                        <Canvas Width="612.092" Height="560.54">
-                                            <Canvas.RenderTransform>
-                                                <TranslateTransform X="-61.68556" Y="-312.8684"/>
-                                            </Canvas.RenderTransform>
-                                            <Path Fill="#FFDE0029" Data="M 395.06807 434.21345 L 394.60021 863.39514 L 279.61012 825.99696 L 279.61012 321.53515 L 426.38841 360.34125 C 520.34231 385.59251 577.83949 434.67697 576.90381 520.70189 C 575.96956 620.75529 529.69221 660.95773 439.47538 634.77658 L 439.47538 437.47977 C 439.47538 413.635 395.06807 412.23866 395.06807 434.21345 z"/>
-                                            <Path Fill="#FFF3C202" Data="M 226.78568 742.76757 L 172.56056 761.00535 C 137.49733 773.16387 107.58489 744.64627 139.83807 732.95128 L 166.01346 723.60717 L 67.381005 692.27665 C 36.994899 702.56663 8.4787729 724.53999 10.3531 755.3983 C 12.223081 786.7187 83.74009 794.20296 138.90381 803.08643 C 190.32031 811.49773 237.06553 806.82349 279.60869 791.86223 L 279.60869 759.60031 L 226.78568 742.76757 z M 395.53446 863.39514 L 496.03688 828.32754 L 394.60021 796.07291 L 394.60021 861.05298 L 395.53446 863.39514 z"/>
-                                            <Path Fill="#FF326DB3" Data="M 662.91715 769.42531 L 664.78565 768.95457 C 708.72663 753.53123 727.42501 732.01703 722.75363 711.92089 C 715.27373 678.26121 661.51646 660.02348 578.77524 653.9442 C 519.41092 649.73926 460.98092 662.82627 403.95154 682.46035 L 394.60164 685.73681 L 496.97405 717.52794 L 556.80624 697.42166 C 619.44554 685.73681 644.69244 706.30513 584.38808 725.47573 L 554.46981 735.75553 L 662.91715 769.42531 z M 279.61012 620.75529 L 234.26272 636.17869 L 279.61012 650.2057 L 279.61012 620.75529 z"/>
-                                            <Path Fill="#FF00AA9E" Data="M 496.03688 828.32754 L 662.91715 769.42531 L 554.46695 735.75553 L 394.60021 790.45575 L 394.60021 796.07291 L 496.03688 828.32754 z M 279.61012 725.00349 L 226.78712 742.76906 L 279.61012 759.60031 L 279.61012 725.00349 z M 394.60021 752.5955 L 394.60021 685.73681 L 496.97262 717.52794 L 394.60021 752.5955 z M 166.01492 723.60717 L 279.60869 682.93251 L 279.60869 650.2057 L 234.26272 636.17869 L 69.718853 691.81461 C 69.250983 691.81461 68.316721 692.27665 67.38246 692.27665 L 166.01492 723.60717 z"/>
-                                            </Canvas>
-                                        </Viewbox>
-                                    </ContentControl>
-                                    <ProgressBar IsIndeterminate="True" Width="100" Height="4" Foreground="#00ADFF" Background="Transparent" BorderThickness="0" Margin="0,15,0,0"/>
-                                    <TextBlock Text="Cargando..." Foreground="White" Margin="0,10,0,0" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                </StackPanel>
-
-                                <Button x:Name="btnPrev" Content="❮" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Left" Margin="20,0,0,0" Click="btnPrev_Click"/>
-                                <Button x:Name="btnNext" Content="❯" Style="{StaticResource NavButtonStyle}" HorizontalAlignment="Right" Margin="0,0,20,0" Click="btnNext_Click"/>
-                            </Grid>
-                        </Border>
-
-                        <!-- Controles debajo del video, estilo YouTube -->
-                        <Border x:Name="ControlsPanel" CornerRadius="0,0,20,20" Background="#1C2030" Padding="12,12" Height="68"
-                                MouseEnter="ControlsPanel_MouseEnter" MouseMove="ControlsPanel_MouseMove">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <Slider x:Name="TimelineSlider" Style="{StaticResource ModernSlider}" Maximum="100" Thumb.DragStarted="TimelineSlider_DragStarted" Thumb.DragCompleted="TimelineSlider_DragCompleted"/>
-                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,0,0">
-                                    <Button x:Name="btnPlayPause" Content="{StaticResource IconPlay}" Width="28" Height="28" Background="Transparent" BorderThickness="0" Click="btnPlayPause_Click" Foreground="White"/>
-                                    <Button x:Name="btnMute" Content="{StaticResource IconVolOn}" Width="22" Height="28" Background="Transparent" BorderThickness="0" Margin="10,0" Click="btnMute_Click" Foreground="White"/>
-                                    <TextBlock x:Name="lblTime" Text="0:00" Foreground="White" VerticalAlignment="Center" FontSize="12"/>
-                                    <TextBlock Text=" / " Foreground="Gray" VerticalAlignment="Center" FontSize="12"/>
-                                    <TextBlock x:Name="lblTotalTime" Text="0:00" Foreground="Gray" VerticalAlignment="Center" FontSize="12"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-
-                <UniformGrid x:Name="ThumbnailsGrid" Grid.Row="1" Columns="3" Margin="0,20,0,0">
-                    <Button x:Name="ThumbBtn0" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="video">
-                        <Border x:Name="BorderThumb0" Height="120" CornerRadius="10" BorderThickness="2" BorderBrush="#00ADFF" ClipToBounds="True">
-                            <Grid>
-                                <Image x:Name="ThumbImg0" Source="https://ik.imagekit.io/manuel/ps2_thumb.jpg" Stretch="UniformToFill" Opacity="0.6"/>
-                                <Viewbox Width="30" Height="30">
-                                    <Path Fill="White" Data="M8,5.14V19.14L19,12.14L8,5.14Z"/>
-                                </Viewbox>
-                            </Grid>
-                        </Border>
-                    </Button>
-                    <Button x:Name="ThumbBtn1" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img1">
-                        <Border x:Name="BorderThumb1" Height="120" CornerRadius="10" BorderThickness="0" BorderBrush="#00ADFF" ClipToBounds="True">
-                            <Image x:Name="ThumbImg1" Stretch="UniformToFill"/>
-                        </Border>
-                    </Button>
-                    <Button x:Name="ThumbBtn2" Style="{StaticResource ThumbButtonStyle}" Click="SeleccionarMedia_Click" Tag="img2">
-                        <Border x:Name="BorderThumb2" Height="120" CornerRadius="10" BorderThickness="0" BorderBrush="#00ADFF" ClipToBounds="True">
-                            <Image x:Name="ThumbImg2" Stretch="UniformToFill"/>
-                        </Border>
-                    </Button>
-                </UniformGrid>
+                <Border CornerRadius="20" Background="Black" ClipToBounds="True">
+                    <Grid>
+                        <Image x:Name="ThemeImage" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <TextBlock x:Name="lblNoImage" Text="Sin imagen" Foreground="#555" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                    </Grid>
+                </Border>
             </Grid>
 
             <StackPanel Grid.Row="1" Grid.Column="1">
                 <Border Background="#1C2030" CornerRadius="20" Padding="25">
                     <StackPanel>
                         <TextBlock x:Name="lblPrice" Text="GRATIS" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                        <Button x:Name="btnDownload" Margin="0,20,0,0" Height="50" Background="#00ADFF" Foreground="White" FontWeight="Bold" Cursor="Hand" Click="btnDownload_Click"/>
+                        <Button x:Name="btnDownload" Margin="0,20,0,0" Height="50"
+                                Style="{StaticResource AccentButtonStyle}" Click="btnDownload_Click"
+                                ToolTip="Descargar tema"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -241,11 +72,11 @@
 
                 <TextBlock Text="Valorar" Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,20,0,8"/>
                 <StackPanel x:Name="VotePanel" Orientation="Horizontal" Visibility="Collapsed">
-                    <Button x:Name="StarBtn1" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="1" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
-                    <Button x:Name="StarBtn2" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="2" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
-                    <Button x:Name="StarBtn3" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="3" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
-                    <Button x:Name="StarBtn4" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="4" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
-                    <Button x:Name="StarBtn5" Content="☆" Width="40" Height="40" FontSize="24" Margin="2" Tag="5" Cursor="Hand" Background="Transparent" BorderThickness="0" Foreground="#888"/>
+                    <Button x:Name="StarBtn1" Content="☆" Style="{StaticResource StarButtonStyle}" Tag="1" Foreground="#888" ToolTip="1 estrella"/>
+                    <Button x:Name="StarBtn2" Content="☆" Style="{StaticResource StarButtonStyle}" Tag="2" Foreground="#888" ToolTip="2 estrellas"/>
+                    <Button x:Name="StarBtn3" Content="☆" Style="{StaticResource StarButtonStyle}" Tag="3" Foreground="#888" ToolTip="3 estrellas"/>
+                    <Button x:Name="StarBtn4" Content="☆" Style="{StaticResource StarButtonStyle}" Tag="4" Foreground="#888" ToolTip="4 estrellas"/>
+                    <Button x:Name="StarBtn5" Content="☆" Style="{StaticResource StarButtonStyle}" Tag="5" Foreground="#888" ToolTip="5 estrellas"/>
                     <TextBlock x:Name="txtRatingInfo" Text="" Foreground="#AAA" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </StackPanel>
             </StackPanel>

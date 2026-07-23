@@ -4,7 +4,7 @@ namespace PS2Desktop.Services.Interfaces
 {
     public interface IThemeRepository
     {
-        Task<List<Theme>> GetThemesAsync(string? search = null, string? sortBy = null);
+        Task<List<Theme>> GetThemesAsync(int limit = 50, int offset = 0, string? search = null, string? sortBy = null);
         Task CreateThemeAsync(Theme theme);
         Task DeleteThemeAsync(Guid id);
         Task<int> GetThemeCountAsync(string? search = null);

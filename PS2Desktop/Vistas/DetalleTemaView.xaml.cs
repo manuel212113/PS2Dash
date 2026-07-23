@@ -1,164 +1,45 @@
-﻿using LibVLCSharp.Shared;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
-using YoutubeExplode;
-using YoutubeExplode.Videos.Streams;
 using PS2Desktop.Modelos;
 using PS2Desktop.Services;
 using PS2Desktop.Services.Interfaces;
-using System.Diagnostics;
 
 namespace PS2Desktop.Vistas
 {
-    public partial class DetalleTemaView : UserControl, IDisposable
+    public partial class DetalleTemaView : UserControl
     {
-        private LibVLC _libVLC;
-        private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
-        private bool _isDraggingSlider = false;
-        private readonly YoutubeClient _youtubeClient = new YoutubeClient();
+        public event EventHandler Volver;
+
         private readonly IVoteRepository _voteRepo;
         private readonly ISessionService _session;
-        private readonly IFavoriteRepository _favRepo;
         private Theme _temaActual;
         private int _userVote = 0;
 
-        private const string DefaultVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
-
-        private List<string> _mediaSources = new List<string>();
-        private int _currentIndex = 0;
-        private DispatcherTimer _hideTimer;
-
         public DetalleTemaView()
         {
-            Core.Initialize();
             InitializeComponent();
 
             _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
-            _favRepo = App.ServiceProvider.GetRequiredService<IFavoriteRepository>();
 
             this.Loaded += (s, e) => MainScrollViewer.Focus();
-            _libVLC = new LibVLC();
-            _mediaPlayer = new LibVLCSharp.Shared.MediaPlayer(_libVLC);
-            VideoPlayerDetalle.MediaPlayer = _mediaPlayer;
-
-            // Evento para actualizar el slider y tiempo
-            _mediaPlayer.TimeChanged += (s, e) =>
-            {
-                if (!_isDraggingSlider)
-                {
-                    Dispatcher.BeginInvoke(new Action(() => {
-                        if (_mediaPlayer == null || TimelineSlider == null) return;
-                        TimelineSlider.Value = _mediaPlayer.Position * 100;
-                        TimeSpan t = TimeSpan.FromMilliseconds(e.Time);
-                        lblTime.Text = $"{t.Minutes}:{t.Seconds:D2}";
-
-                        if (_mediaPlayer.Length > 0)
-                        {
-                            TimeSpan total = TimeSpan.FromMilliseconds(_mediaPlayer.Length);
-                            lblTotalTime.Text = $"{total.Minutes}:{total.Seconds:D2}";
-                        }
-                    }));
-                }
-            };
-
-            _hideTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(10)
-            };
-            _hideTimer.Tick += (s, e) =>
-            {
-                if (ControlsPanel == null) return;
-                var fade = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.5));
-                fade.Completed += (_, _) =>
-                {
-                    if (ControlsPanel != null)
-                        ControlsPanel.Visibility = Visibility.Collapsed;
-                };
-                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, fade);
-                _hideTimer.Stop();
-            };
-
-            this.Loaded += DetalleTemaView_Loaded;
-            this.Unloaded += (s, e) => Dispose();
         }
 
-        private void PlayerBorder_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (_currentIndex == 0 && ControlsPanel != null && ControlsPanel.Visibility != Visibility.Visible)
-            {
-                ControlsPanel.Visibility = Visibility.Visible;
-                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
-                _hideTimer.Stop();
-                _hideTimer.Start();
-            }
-        }
-
-        private void PlayerBorder_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (_currentIndex == 0 && ControlsPanel != null)
-            {
-                bool wasHidden = ControlsPanel.Visibility != Visibility.Visible;
-                ControlsPanel.Visibility = Visibility.Visible;
-                if (wasHidden)
-                    ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
-                _hideTimer.Stop();
-                _hideTimer.Start();
-            }
-        }
-
-        private void PlayerBorder_MouseLeave(object sender, MouseEventArgs e)
-        {
-            // Timer handles auto-hide
-        }
-
-        private void ControlsPanel_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (_currentIndex == 0 && ControlsPanel != null)
-            {
-                ControlsPanel.Visibility = Visibility.Visible;
-                _hideTimer.Stop();
-                _hideTimer.Start();
-            }
-        }
-
-        private void ControlsPanel_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (_currentIndex == 0 && ControlsPanel != null)
-            {
-                bool wasHidden = ControlsPanel.Visibility != Visibility.Visible;
-                ControlsPanel.Visibility = Visibility.Visible;
-                if (wasHidden)
-                    ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2)));
-                _hideTimer.Stop();
-                _hideTimer.Start();
-            }
-        }
-
-        /// <summary>
-        /// Establece el tema a mostrar en la vista de detalle
-        /// </summary>
         public void SetTema(Theme tema)
         {
             _temaActual = tema;
             this.DataContext = tema;
 
-            // --- Título ---
             lblTitle.Text = tema.nombre ?? "Sin título";
-
-            // --- Descripción ---
             lblDescripcion.Text = tema.descripcion ?? "Sin descripción";
 
-            // --- Características ---
             if (tema.caracteristicas != null && tema.caracteristicas.Count > 0)
             {
                 CaracteristicasList.ItemsSource = tema.caracteristicas;
@@ -169,40 +50,15 @@ namespace PS2Desktop.Vistas
                 CaracteristicasList.Visibility = Visibility.Collapsed;
             }
 
-            // --- Rating ---
             CardVisualHelper.FireAndForget(() => CargarRatingAsync(tema.id), "Error cargando rating");
 
-            // --- Sidebar (precio / botón) ---
             lblPrice.Text = "GRATIS";
             btnDownload.Content = string.IsNullOrEmpty(tema.link_descarga) ? "No disponible" : "CONSEGUIR";
             btnDownload.IsEnabled = !string.IsNullOrEmpty(tema.link_descarga);
 
-            // --- Favorite button ---
             if (_session.IsLoggedIn)
             {
-                var favBtn = new Border
-                {
-                    CornerRadius = new CornerRadius(12), Height = 44, Cursor = Cursors.Hand,
-                    Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
-                    Margin = new Thickness(0, 10, 0, 0)
-                };
-                var favIcon = new TextBlock
-                {
-                    Text = "♡ Agregar a favoritos",
-                    Foreground = Brushes.White,
-                    FontSize = 13, FontWeight = FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                favBtn.Child = favIcon;
-                CardVisualHelper.FireAndForget(() => UpdateFavIconAsync(favIcon, tema.id, "theme"), "Error actualizando fav");
-                favBtn.MouseDown += async (s, e) =>
-                {
-                    if (_session.CurrentUser == null) return;
-                    await _favRepo.ToggleFavoriteAsync(_session.CurrentUser.id, tema.id, "theme");
-                    await UpdateFavIconAsync(favIcon, tema.id, "theme");
-                };
-
+                var favBtn = CardVisualHelper.CreateFavButtonSidebar(tema.id, "theme");
                 var sidebar = (btnDownload.Parent as StackPanel);
                 if (sidebar != null)
                 {
@@ -211,31 +67,28 @@ namespace PS2Desktop.Vistas
                 }
             }
 
-            // --- Thumbnails ---
             if (!string.IsNullOrEmpty(tema.image_url))
             {
-                ThumbImg0.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
-                ThumbImg1.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
-                ThumbImg2.Source = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
+                try
+                {
+                    var img = new BitmapImage(new Uri(tema.image_url, UriKind.Absolute));
+                    ThemeImage.Source = img;
+                    lblNoImage.Visibility = Visibility.Collapsed;
+                }
+                catch
+                {
+                    ThemeImage.Source = null;
+                    lblNoImage.Visibility = Visibility.Visible;
+                }
             }
             else
             {
-                ThumbImg1.Visibility = Visibility.Collapsed;
-                ThumbImg2.Visibility = Visibility.Collapsed;
+                ThemeImage.Source = null;
+                lblNoImage.Visibility = Visibility.Visible;
             }
 
-            // --- Votación ---
             VotePanel.Visibility = Visibility.Visible;
             ConfigurarEstrellas();
-
-            // --- Media sources ---
-            _mediaSources = new List<string>
-            {
-                tema.video_demo,
-                tema.image_url,
-                null
-            };
-            _currentIndex = 0;
         }
 
         private async Task CargarRatingAsync(Guid themeId)
@@ -256,203 +109,7 @@ namespace PS2Desktop.Vistas
             catch (Exception ex) { LoggingService.Instance.Error("Error loading ratings", ex); }
         }
 
-        private async void DetalleTemaView_Loaded(object sender, RoutedEventArgs e)
-        {
-            await Task.Delay(300);
-            if (_mediaSources.Count > 0 && _mediaSources[0] != null)
-                await CambiarMedia(0);
-        }
-
-        private void MostrarControles(bool visible)
-        {
-            if (ControlsPanel == null) return;
-            _hideTimer.Stop();
-            ControlsPanel.BeginAnimation(UIElement.OpacityProperty, null);
-
-            if (visible)
-            {
-                ControlsPanel.Visibility = Visibility.Visible;
-                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3)));
-                _hideTimer.Start();
-            }
-            else
-            {
-                var animOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.2));
-                animOut.Completed += (s, e) =>
-                {
-                    if (ControlsPanel != null && ControlsPanel.Opacity == 0)
-                        ControlsPanel.Visibility = Visibility.Collapsed;
-                };
-                ControlsPanel.BeginAnimation(UIElement.OpacityProperty, animOut);
-            }
-        }
-
-        private async Task CambiarMedia(int index)
-        {
-            _currentIndex = index;
-            LoadingPanel.Visibility = Visibility.Visible;
-            ActualizarBordesMiniaturas(index);
-
-            try
-            {
-                if (index >= _mediaSources.Count || _mediaSources[index] == null)
-                {
-                    _mediaPlayer.Stop();
-                    return;
-                }
-
-                bool esVideo = index == 0;
-                MostrarControles(esVideo);
-
-                if (esVideo)
-                {
-                    await ReproducirVideo(_mediaSources[index]);
-                }
-                else
-                {
-                    var media = new Media(_libVLC, new Uri(_mediaSources[index]));
-                    _mediaPlayer.Play(media);
-                    await Task.Delay(500);
-                    _mediaPlayer.Pause();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine("Error al cambiar media: " + ex.Message);
-            }
-            finally
-            {
-                LoadingPanel.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private async Task ReproducirVideo(string videoUrl)
-        {
-            try
-            {
-                var streamManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(videoUrl);
-                var streamInfo = streamManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-
-                if (streamInfo != null)
-                {
-                    var media = new Media(_libVLC, new Uri(streamInfo.Url));
-                    _mediaPlayer.Play(media);
-                    btnPlayPause.Content = this.FindResource("IconPause");
-                    return;
-                }
-            }
-            catch
-            {
-                Debug.WriteLine("Fallo el video principal, usando fallback");
-            }
-
-            if (videoUrl != DefaultVideoUrl)
-            {
-                try
-                {
-                    var fallbackManifest = await _youtubeClient.Videos.Streams.GetManifestAsync(DefaultVideoUrl);
-                    var fallbackStream = fallbackManifest.GetMuxedStreams().GetWithHighestVideoQuality();
-
-                    if (fallbackStream != null)
-                    {
-                        _mediaSources[0] = DefaultVideoUrl;
-                        var media = new Media(_libVLC, new Uri(fallbackStream.Url));
-                        _mediaPlayer.Play(media);
-                        btnPlayPause.Content = this.FindResource("IconPause");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error en fallback de video: " + ex.Message);
-                }
-            }
-        }
-
-        private void ActualizarBordesMiniaturas(int index)
-        {
-            // Resetear todos a 0
-            BorderThumb0.BorderThickness = new Thickness(0);
-            BorderThumb1.BorderThickness = new Thickness(0);
-            BorderThumb2.BorderThickness = new Thickness(0);
-
-            // Resaltar el seleccionado
-            if (index == 0) BorderThumb0.BorderThickness = new Thickness(2);
-            else if (index == 1) BorderThumb1.BorderThickness = new Thickness(2);
-            else if (index == 2) BorderThumb2.BorderThickness = new Thickness(2);
-        }
-
-        // Evento de clic en miniaturas
-        private async void SeleccionarMedia_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is not Button btn) return;
-            string tag = btn.Tag.ToString();
-
-            int index = tag switch
-            {
-                "video" => 0,
-                "img1" => 1,
-                "img2" => 2,
-                _ => 0
-            };
-
-            if (index < _mediaSources.Count && _mediaSources[index] != null)
-                await CambiarMedia(index);
-        }
-
-        // Navegación con flechas
-        private async void btnPrev_Click(object sender, RoutedEventArgs e)
-        {
-            int newIndex = _currentIndex;
-            for (int i = 0; i < _mediaSources.Count; i++)
-            {
-                newIndex--;
-                if (newIndex < 0) newIndex = _mediaSources.Count - 1;
-                if (newIndex < _mediaSources.Count && _mediaSources[newIndex] != null)
-                    break;
-            }
-            await CambiarMedia(newIndex);
-        }
-
-        private async void btnNext_Click(object sender, RoutedEventArgs e)
-        {
-            int newIndex = _currentIndex;
-            for (int i = 0; i < _mediaSources.Count; i++)
-            {
-                newIndex = (newIndex + 1) % _mediaSources.Count;
-                if (_mediaSources[newIndex] != null)
-                    break;
-            }
-            await CambiarMedia(newIndex);
-        }
-
-        private void btnPlayPause_Click(object sender, RoutedEventArgs e)
-        {
-            if (_mediaPlayer.IsPlaying)
-            {
-                _mediaPlayer.Pause();
-                btnPlayPause.Content = this.FindResource("IconPlay");
-            }
-            else
-            {
-                _mediaPlayer.Play();
-                btnPlayPause.Content = this.FindResource("IconPause");
-            }
-        }
-
-        private void btnMute_Click(object sender, RoutedEventArgs e)
-        {
-            _mediaPlayer.Mute = !_mediaPlayer.Mute;
-            // Podrías alternar iconos aquí si tuvieras un IconVolOff
-            btnMute.Content = this.FindResource("IconVolOn");
-        }
-
-        private void TimelineSlider_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e) => _isDraggingSlider = true;
-
-        private void TimelineSlider_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-        {
-            _mediaPlayer.Position = (float)(TimelineSlider.Value / 100.0);
-            _isDraggingSlider = false;
-        }
+        private void btnVolver_Click(object sender, RoutedEventArgs e) => Volver?.Invoke(this, EventArgs.Empty);
 
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -471,21 +128,11 @@ namespace PS2Desktop.Vistas
             e.Handled = true;
         }
 
-        public void Dispose()
-        {
-            _mediaPlayer?.Stop();
-            _mediaPlayer?.Dispose();
-            _libVLC?.Dispose();
-            _mediaPlayer = null;
-            _libVLC = null;
-        }
-
-        // Aplicar un Theme al detalle
         public async Task ApplyTheme(Theme theme)
         {
             if (theme == null) return;
             SetTema(theme);
-            await CambiarMedia(0);
+            await Task.CompletedTask;
         }
 
         private void ConfigurarEstrellas()
@@ -551,19 +198,6 @@ namespace PS2Desktop.Vistas
                     Debug.WriteLine("Error opening link: " + ex.Message);
                 }
             }
-        }
-
-        private async void Vote_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button b && int.TryParse(b.Tag?.ToString(), out int val))
-                await EnviarVotoAsync(val);
-        }
-
-        private async System.Threading.Tasks.Task UpdateFavIconAsync(TextBlock icon, Guid itemId, string itemType)
-        {
-            if (_session.CurrentUser == null) return;
-            var isFav = await _favRepo.IsFavoriteAsync(_session.CurrentUser.id, itemId, itemType);
-            icon.Text = isFav ? "♥ Quitar de favoritos" : "♡ Agregar a favoritos";
         }
 
         private async Task EnviarVotoAsync(int valor)

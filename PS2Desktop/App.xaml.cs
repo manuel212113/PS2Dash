@@ -62,6 +62,7 @@ namespace PS2Desktop
             services.AddSingleton<ImageCacheService>(_ => ImageCacheService.Instance);
             services.AddSingleton<EmailService>();
             services.AddSingleton<LoggingService>(_ => LoggingService.Instance);
+            services.AddSingleton<LibretroNameService>();
 
             // ViewModels
             services.AddTransient<LoginViewModel>();
@@ -71,8 +72,10 @@ namespace PS2Desktop
 
             base.OnStartup(e);
 
-            // Initialize DB
+            // Initialize DB + libretro name lookup
             CardVisualHelper.FireAndForget(() => InitializeDatabaseAsync(), "Error inicializando DB");
+            var nameSvc = ServiceProvider.GetRequiredService<LibretroNameService>();
+            CardVisualHelper.FireAndForget(() => nameSvc.EnsureLoadedAsync(), "Error loading libretro names");
 
             var splash = new AppSplash();
             splash.Show();

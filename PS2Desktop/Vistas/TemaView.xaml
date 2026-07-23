@@ -65,6 +65,16 @@
                         <ComboBoxItem Content="Nombre Z-A" Tag="name_desc"/>
                     </ComboBox>
                 </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="BtnPrevPage" Content="&#x25C0;" Click="BtnPrevPage_Click"
+                            Style="{StaticResource PaginationButtonStyle}" FontSize="18"/>
+                    <TextBlock x:Name="TxtPageInfo" Text="1" Foreground="White" VerticalAlignment="Center" Margin="10,0"/>
+                    <TextBlock Text="/" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtTotalPages" Text="1" Foreground="White" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                    <Button x:Name="BtnNextPage" Content="&#x25B6;" Click="BtnNextPage_Click"
+                            Style="{StaticResource PaginationButtonStyle}" FontSize="18"/>
+                </StackPanel>
             </Grid>
 
             <!-- ScrollViewer que contiene el WrapPanel de temas -->

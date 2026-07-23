@@ -29,6 +29,10 @@ namespace PS2Desktop.Vistas
         private string? _sortBy = "date_desc";
         private CancellationTokenSource? _searchCts;
         private List<Border> _tarjetasCreadas = new();
+        private int _currentPage = 1;
+        private int _totalPages = 1;
+        private int _totalThemes = 0;
+        private int ThemesPerPage => AppSettings.PageSize;
 
         public TemaView()
         {
@@ -123,6 +127,7 @@ namespace PS2Desktop.Vistas
             {
                 _searchText = TxtSearch.Text.Trim();
             }
+            _currentPage = 1;
             CardVisualHelper.FireAndForget(() => RecargarTemasAsync(), "Error recargando temas");
         }
 
@@ -142,6 +147,7 @@ namespace PS2Desktop.Vistas
                 if (!token.IsCancellationRequested)
                 {
                     _searchText = TxtSearch.Text.Trim();
+                    _currentPage = 1;
                     await RecargarTemasAsync();
                 }
             }
@@ -155,6 +161,7 @@ namespace PS2Desktop.Vistas
                 e.Handled = true;
                 _searchCts?.Cancel();
                 _searchText = TxtSearch.Text.Trim();
+                _currentPage = 1;
                 CardVisualHelper.FireAndForget(() => RecargarTemasAsync(), "Error recargando temas");
             }
         }
@@ -164,6 +171,25 @@ namespace PS2Desktop.Vistas
             if (CboSort.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
                 _sortBy = tag;
+                _currentPage = 1;
+                await RecargarTemasAsync();
+            }
+        }
+
+        private async void BtnPrevPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentPage > 1)
+            {
+                _currentPage--;
+                await RecargarTemasAsync();
+            }
+        }
+
+        private async void BtnNextPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (_currentPage < _totalPages)
+            {
+                _currentPage++;
                 await RecargarTemasAsync();
             }
         }
@@ -196,7 +222,13 @@ namespace PS2Desktop.Vistas
         {
             try
             {
-                var temas = await ThemeRepo.GetThemesAsync(_searchText, _sortBy);
+                _totalThemes = await ThemeRepo.GetThemeCountAsync(_searchText);
+                _totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalThemes / ThemesPerPage));
+                if (_currentPage > _totalPages) _currentPage = _totalPages;
+                if (_currentPage < 1) _currentPage = 1;
+
+                var offset = (_currentPage - 1) * ThemesPerPage;
+                var temas = await ThemeRepo.GetThemesAsync(ThemesPerPage, offset, _searchText, _sortBy);
                 temesPanel.Children.Clear();
 
                 if (temas.Count == 0)
@@ -212,14 +244,26 @@ namespace PS2Desktop.Vistas
                         EmptySubtitle.Text = "Los temas aparecerán aquí cuando sean agregados";
                     }
                     EmptyState.Visibility = Visibility.Visible;
-                    return;
+                }
+                else
+                {
+                    EmptyState.Visibility = Visibility.Collapsed;
+                    for (int i = 0; i < temas.Count; i++)
+                    {
+                        var card = CrearTarjetaTema(temas[i]);
+                        card.Opacity = 0;
+                        temesPanel.Children.Add(card);
+                        var delay = TimeSpan.FromSeconds(i * 0.05);
+                        var anim = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.3)) { BeginTime = delay };
+                        card.BeginAnimation(OpacityProperty, anim);
+                    }
+                    CardVisualHelper.FireAndForget(() => CargarImagenesAsync(temas), "Error cargando imágenes");
                 }
 
-                EmptyState.Visibility = Visibility.Collapsed;
-                foreach (var tema in temas)
-                    temesPanel.Children.Add(CrearTarjetaTema(tema));
-
-                CardVisualHelper.FireAndForget(() => CargarImagenesAsync(temas), "Error cargando imágenes");
+                TxtPageInfo.Text = _currentPage.ToString();
+                TxtTotalPages.Text = _totalPages.ToString();
+                BtnPrevPage.IsEnabled = _currentPage > 1;
+                BtnNextPage.IsEnabled = _currentPage < _totalPages;
             }
             catch (Exception ex)
             {
@@ -307,52 +351,7 @@ namespace PS2Desktop.Vistas
 
             if (Session.IsLoggedIn)
             {
-                var favBtn = new Border
-                {
-                    Width = 28, Height = 28, CornerRadius = new CornerRadius(14),
-                    Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)),
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    VerticalAlignment = VerticalAlignment.Top,
-                    Margin = new Thickness(0, 8, 8, 0),
-                    Cursor = System.Windows.Input.Cursors.Hand,
-                    Tag = tema.id
-                };
-                var favIcon = new TextBlock
-                {
-                    Text = "♡",
-                    Foreground = new SolidColorBrush(Colors.White),
-                    FontSize = 14,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                favBtn.Child = favIcon;
-                favBtn.MouseDown += async (s, e) =>
-                {
-                    e.Handled = true;
-                    if (Session.CurrentUser == null) return;
-                    await FavRepo.ToggleFavoriteAsync(Session.CurrentUser.id, tema.id, "theme");
-                    var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, tema.id, "theme");
-                    favIcon.Text = isFav ? "♥" : "♡";
-                    favIcon.Foreground = isFav
-                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
-                        : new SolidColorBrush(Colors.White);
-                };
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        if (Session.CurrentUser == null) return;
-                        var isFav = await FavRepo.IsFavoriteAsync(Session.CurrentUser.id, tema.id, "theme");
-                        await Dispatcher.InvokeAsync(() =>
-                        {
-                            favIcon.Text = isFav ? "♥" : "♡";
-                            favIcon.Foreground = isFav
-                                ? new SolidColorBrush(Color.FromRgb(0xFF, 0x45, 0x45))
-                                : new SolidColorBrush(Colors.White);
-                        });
-                    }
-                    catch (Exception ex) { LoggingService.Instance.Error("Error checking favorite status", ex); }
-                });
+                var favBtn = CardVisualHelper.CreateFavButtonCard(tema.id, "theme", () => Task.CompletedTask);
                 imageContainer.Children.Add(favBtn);
             }
 

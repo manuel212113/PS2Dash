@@ -91,21 +91,9 @@
                 </Grid.ColumnDefinitions>
                 <TextBox x:Name="TxtCaracteristica" Grid.Column="0" Style="{StaticResource FieldInputStyle}"
                          Text="Escribe y presiona Agregar"/>
-                <Button Grid.Column="1" Content="Agregar" Margin="8,0,0,0" Width="90" Cursor="Hand" Click="AddCaracteristica_Click"
-                        Background="#0055CC" Foreground="White" Height="40" FontWeight="SemiBold" BorderThickness="0">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#0066E6"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                <Button Grid.Column="1" Content="Agregar" Margin="8,0,0,0" Width="90"
+                        Style="{StaticResource AccentButtonStyle}" Click="AddCaracteristica_Click"
+                         Height="40"/>
             </Grid>
             <ItemsControl x:Name="CaracteristicasList" Margin="0,8,0,0">
                 <ItemsControl.ItemsPanel>
@@ -146,67 +134,25 @@
             <TextBox x:Name="TxtLinkDescarga" Style="{StaticResource FieldInputStyle}"/>
 
             <!-- Submit -->
-            <Button x:Name="BtnCrear" Content="CREAR" Margin="0,30,0,0" Height="48" Cursor="Hand"
-                    Background="#0055CC" Foreground="White" FontSize="16" FontWeight="Bold" BorderThickness="0"
-                    Click="BtnCrear_Click">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="12">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#0066E6"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#0044AA"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
+            <Button x:Name="BtnCrear" Content="CREAR" Margin="0,30,0,0" Height="48"
+                    Style="{StaticResource AccentButtonStyle}" FontSize="16" FontWeight="Bold"
+                    Click="BtnCrear_Click"/>
             <TextBlock Text="O pega el JSON aquí" Foreground="#8890A0" FontSize="12" Margin="0,24,0,6"/>
             <TextBox x:Name="TxtJsonImport" Style="{StaticResource FieldInputStyle}" Height="160"
                      AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                      FontFamily="Consolas" FontSize="12"/>
-            <Button x:Name="BtnImportar" Content="IMPORTAR JSON" Margin="0,8,0,0" Height="36" Cursor="Hand"
-                    Background="#2A3A58" Foreground="White" FontSize="13" FontWeight="SemiBold" BorderThickness="0"
-                    Click="BtnImportar_Click">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#3A5A88"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
+            <Button x:Name="BtnImportar" Content="IMPORTAR JSON" Margin="0,8,0,0" Height="36"
+                    Style="{StaticResource AccentButtonStyle}" Background="#2A3A58"
+                    Click="BtnImportar_Click"/>
             <TextBlock x:Name="LblStatus" Foreground="#00E676" FontSize="13" Margin="0,10,0,0" HorizontalAlignment="Center"/>
 
             <!-- ==================== ELIMINAR ==================== -->
             <Separator Margin="0,30,0,0" Background="#2A3A58" Height="1"/>
             <TextBlock Text="Eliminar Temas / Juegos" Foreground="White" FontSize="20" FontWeight="Bold" Margin="0,20,0,0"/>
             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                <Button x:Name="BtnLoadItems" Content="Cargar lista" Height="36" Width="140" Cursor="Hand"
-                        Background="#2A3A58" Foreground="White" FontSize="13" FontWeight="SemiBold" BorderThickness="0"
-                        Click="BtnLoadItems_Click">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <ControlTemplate.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="border" Property="Background" Value="#3A5A88"/>
-                                </Trigger>
-                            </ControlTemplate.Triggers>
-                        </ControlTemplate>
-                    </Button.Template>
-                </Button>
+                <Button x:Name="BtnLoadItems" Content="Cargar lista" Height="36" Width="140"
+                        Style="{StaticResource AccentButtonStyle}" Background="#2A3A58"
+                        Click="BtnLoadItems_Click"/>
                 <TextBlock x:Name="LblItemCount" Text="0 elementos" Foreground="#8890A0" FontSize="13"
                            VerticalAlignment="Center" Margin="16,0,0,0"/>
             </StackPanel>
@@ -229,23 +175,9 @@
                                         <TextBlock Text="{Binding Nombre}" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
                                         <TextBlock Text="{Binding Tipo}" Foreground="#8890A0" FontSize="11"/>
                                     </StackPanel>
-                                    <Button Grid.Column="2" Content="ELIMINAR" Width="80" Height="30" Cursor="Hand"
-                                            Background="#CC3333" Foreground="White" FontSize="11" FontWeight="Bold"
-                                            BorderThickness="0" CommandParameter="{Binding Id}"
-                                            Click="BtnEliminarItem_Click">
-                                        <Button.Template>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="border" Property="Background" Value="#EE4444"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Button.Template>
-                                    </Button>
+                                    <Button Grid.Column="2" Content="ELIMINAR" Width="80" Height="30"
+                                            Style="{StaticResource DangerButtonStyle}" FontSize="11"
+                                            CommandParameter="{Binding Id}" Click="BtnEliminarItem_Click"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -260,22 +192,9 @@
             <TextBox x:Name="TxtAvatarJson" Style="{StaticResource FieldInputStyle}" Height="120"
                      AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                      FontFamily="Consolas" FontSize="12"/>
-            <Button x:Name="BtnImportarAvatares" Content="IMPORTAR AVATARES" Margin="0,8,0,0" Height="36" Cursor="Hand"
-                    Background="#2A3A58" Foreground="White" FontSize="13" FontWeight="SemiBold" BorderThickness="0"
-                    Click="BtnImportarAvatares_Click">
-                <Button.Template>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#3A5A88"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
+            <Button x:Name="BtnImportarAvatares" Content="IMPORTAR AVATARES" Margin="0,8,0,0" Height="36"
+                    Style="{StaticResource AccentButtonStyle}" Background="#2A3A58"
+                    Click="BtnImportarAvatares_Click"/>
             <TextBlock x:Name="LblAvatarStatus" Foreground="#00E676" FontSize="13" Margin="0,10,0,0" HorizontalAlignment="Center"/>
 
             <!-- Bottom spacer -->

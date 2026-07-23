@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using PS2Desktop.Vistas;
 using PS2Desktop.Modelos;
@@ -17,6 +18,32 @@ namespace PS2Desktop
     {
         private readonly ISessionService _session;
         private TemaView _currentTemaView;
+        private bool _isNavigating = false;
+
+        private void NavigateTo(object newContent)
+        {
+            if (_isNavigating) return;
+            var current = MainContentFrame.Content;
+            if (current == null || Equals(current, newContent))
+            {
+                MainContentFrame.Content = newContent;
+                return;
+            }
+
+            _isNavigating = true;
+            var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.15));
+            fadeOut.Completed += (s, e) =>
+            {
+                DisposeCurrentContent();
+                MainContentFrame.Content = newContent;
+
+                MainContentFrame.Opacity = 0;
+                var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.2));
+                fadeIn.Completed += (s2, e2) => _isNavigating = false;
+                MainContentFrame.BeginAnimation(OpacityProperty, fadeIn);
+            };
+            MainContentFrame.BeginAnimation(OpacityProperty, fadeOut);
+        }
 
         public MainWindow()
         {
@@ -59,7 +86,7 @@ namespace PS2Desktop
                 ActualizarPerfil();
                 onSuccess?.Invoke();
             };
-            MainContentFrame.Content = loginView;
+            NavigateTo(loginView);
         }
 
         private bool VerificarLogin()
@@ -95,10 +122,11 @@ namespace PS2Desktop
                 {
                     var detalleView = new DetalleTemaView();
                     detalleView.SetTema(tema);
-                    MainContentFrame.Content = detalleView;
+                    detalleView.Volver += (s2, e2) => CargarTemaView();
+                    NavigateTo(detalleView);
                 }
             };
-            MainContentFrame.Content = _currentTemaView;
+            NavigateTo(_currentTemaView);
         }
 
         /// <summary>
@@ -110,13 +138,13 @@ namespace PS2Desktop
             var homeView = new HomeView();
             homeView.NavigateToTemas += (s, e) => CargarTemaView();
             homeView.NavigateToJuegos += (s, e) => CargarJuegosView();
-            MainContentFrame.Content = homeView;
+            NavigateTo(homeView);
         }
 
         private void ResaltarBotonActivo(Button activo)
         {
             SoundService.PlayClick();
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnConfig, BtnAdmin, BtnPerfil };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil };
 
             foreach (var btn in buttons)
             {
@@ -137,7 +165,7 @@ namespace PS2Desktop
         {
             App.EnsureDarkTheme();
             Sidebar.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#121212"));
-            foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnConfig, BtnAdmin, BtnPerfil })
+            foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil })
             {
                 btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
             }
@@ -185,10 +213,11 @@ namespace PS2Desktop
                 {
                     var detalle = new DetalleJuegosView();
                     detalle.SetGame(juego);
-                    MainContentFrame.Content = detalle;
+                    detalle.Volver += (s2, e2) => CargarJuegosView();
+                    NavigateTo(detalle);
                 }
             };
-            MainContentFrame.Content = view;
+            NavigateTo(view);
             ResaltarBotonActivo(BtnJuegos);
         }
 
@@ -200,16 +229,31 @@ namespace PS2Desktop
 
         private void BtnCrear_Click(object sender, RoutedEventArgs e)
         {
-            if (!VerificarLogin()) { MostrarLogin(() => { MainContentFrame.Content = new CrearView(); }); return; }
-            MainContentFrame.Content = new CrearView();
+            if (!VerificarLogin()) { MostrarLogin(() => { NavigateTo(new CrearView()); }); return; }
+            NavigateTo(new CrearView());
             ResaltarBotonActivo(BtnCrear);
         }
 
         private void BtnConfig_Click(object sender, RoutedEventArgs e)
         {
             if (!_session.IsAdmin) return;
-            MainContentFrame.Content = new ConfiguracionView();
+            NavigateTo(new ConfiguracionView());
             ResaltarBotonActivo(BtnConfig);
+        }
+
+        private void BtnHerramientas_Click(object sender, RoutedEventArgs e)
+        {
+            if (!VerificarLogin()) { MostrarLogin(() => CargarHerramientasView()); return; }
+            CargarHerramientasView();
+        }
+
+        private void CargarHerramientasView()
+        {
+            DisposeCurrentContent();
+            var view = new HerramientasView();
+            view.Volver += (s, e2) => CargarHomeView();
+            NavigateTo(view);
+            ResaltarBotonActivo(BtnHerramientas);
         }
 
         private void BtnAdmin_Click(object sender, RoutedEventArgs e)
@@ -222,7 +266,7 @@ namespace PS2Desktop
         private void CargarAdminView()
         {
             DisposeCurrentContent();
-            MainContentFrame.Content = new AdministrarUsuariosView();
+            NavigateTo(new AdministrarUsuariosView());
         }
 
         private void BtnPerfil_Click(object sender, RoutedEventArgs e)
@@ -254,7 +298,7 @@ namespace PS2Desktop
             LogoutText.Visibility = Visibility.Collapsed;
             ProfileName.Text = "Usuario";
             AvatarImage.Source = null;
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnAdmin, BtnPerfil };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil };
             foreach (var btn in buttons)
             {
                 btn.Background = Brushes.Transparent;

@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +25,8 @@ namespace PS2Desktop.Vistas
 {
     public partial class DetalleJuegosView : UserControl, IDisposable
     {
+        public event EventHandler Volver;
+
         private LibVLC _libVLC;
         private LibVLCSharp.Shared.MediaPlayer _mediaPlayer;
         private bool _isDraggingSlider;
@@ -30,12 +34,24 @@ namespace PS2Desktop.Vistas
         private readonly IVoteRepository _voteRepo;
         private readonly ISessionService _session;
         private readonly MediaFireService _mediaFire;
-        private readonly IFavoriteRepository _favRepo;
+        private static readonly HttpClient _ghResolveClient = new() { Timeout = TimeSpan.FromSeconds(5) };
         private Game _game;
         private int _userVote;
+        private readonly LibretroNameService _libretroNameService;
 
         private const string DefaultVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
         private const string ImageBase = "https://raw.githubusercontent.com/Luden02/psx-ps2-opl-art-database/main/PS2";
+        private const string LibretroLogosBase = "https://raw.githubusercontent.com/libretro-thumbnails/Sony_-_PlayStation_2/master/Named_Logos";
+        private const string OplIcoBase = "https://raw.githubusercontent.com/HowlingWolfHWC/PS2-Art-and-Info-for-OPL-and-XEBPlus/main/ART";
+
+        private static readonly Dictionary<string, string> RegionMap = new()
+        {
+            { "NTSC-U", "USA" },
+            { "NTSC-J", "Japan" },
+            { "PAL", "Europe" },
+            { "NTSC-C", "China" },
+            { "NTSC-K", "Korea" },
+        };
 
         private List<string> _mediaSources = new();
         private int _currentIndex;
@@ -48,7 +64,7 @@ namespace PS2Desktop.Vistas
             _voteRepo = App.ServiceProvider.GetRequiredService<IVoteRepository>();
             _session = App.ServiceProvider.GetRequiredService<ISessionService>();
             _mediaFire = App.ServiceProvider.GetRequiredService<MediaFireService>();
-            _favRepo = App.ServiceProvider.GetRequiredService<IFavoriteRepository>();
+            _libretroNameService = App.ServiceProvider.GetRequiredService<LibretroNameService>();
 
             _libVLC = new LibVLC();
             _mediaPlayer = new LibVLCSharp.Shared.MediaPlayer(_libVLC);
@@ -86,13 +102,195 @@ namespace PS2Desktop.Vistas
             this.Unloaded += (s, e) => Dispose();
         }
 
+        private (string? Primary, string[] Fallbacks) GetLibretroLogoUrls(Game game)
+        {
+            var region = RegionMap.TryGetValue(game.region ?? "", out var r) ? r : "USA";
+            var result = new List<string>();
+
+            // 1. DAT lookup by serial — most accurate
+            if (_libretroNameService.IsLoaded)
+            {
+                var datName = _libretroNameService.GetName(game.game_id);
+                if (datName != null)
+                    result.Add($"{LibretroLogosBase}/{EncodeNameForLogo(datName)}.png");
+            }
+
+            // 2. Try game.nombre directly
+            if (!string.IsNullOrEmpty(game.nombre))
+            {
+                var encoded = EncodeNameForLogo(game.nombre);
+                result.Add($"{LibretroLogosBase}/{encoded}%20%28{region}%29.png");
+
+                // 3. PAL — try common language-suffix patterns
+                if (region == "Europe")
+                {
+                    var eu = $"{LibretroLogosBase}/{encoded}%20%28Europe%29";
+                    result.Add($"{eu}%20%28En%2CFr%2CDe%2CEs%2CIt%2CNl%2CSv%29.png");
+                    result.Add($"{eu}%20%28En%2CFr%2CDe%2CEs%2CIt%29.png");
+                    result.Add($"{eu}%20%28En%2CFr%2CDe%2CEs%29.png");
+                    result.Add($"{eu}%20%28En%2CFr%2CDe%29.png");
+                    result.Add($"{eu}%20%28En%2CFr%29.png");
+                    result.Add($"{eu}.png");
+                }
+            }
+
+            var unique = new List<string>();
+            foreach (var u in result)
+                if (!unique.Contains(u, StringComparer.OrdinalIgnoreCase))
+                    unique.Add(u);
+
+            return unique.Count > 0
+                ? (unique[0], unique.Skip(1).ToArray())
+                : (null, []);
+        }
+
+        private static string EncodeNameForLogo(string name)
+        {
+            return name
+                .Replace(" ", "%20")
+                .Replace(",", "%2C")
+                .Replace("(", "%28")
+                .Replace(")", "%29")
+                .Replace("&", "_")
+                .Replace("*", "_")
+                .Replace(":", "_")
+                .Replace("<", "_")
+                .Replace(">", "_")
+                .Replace("?", "_")
+                .Replace("\\", "_")
+                .Replace("|", "_")
+                .Replace("\"", "_");
+        }
+
+        private async void PosterImage_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+        {
+            if (sender is not Image img) return;
+
+            if (img.Tag is LogoFallbackChain chain)
+            {
+                // Try to resolve via GitHub: raw.githubusercontent.com returns
+                // the actual filename as text when the requested file doesn't match
+                if (!chain.AlreadyResolved && chain.LastAttemptedUrl != null)
+                {
+                    var resolved = await TryResolveFromGitHub(chain.LastAttemptedUrl);
+                    chain.AlreadyResolved = true;
+                    if (resolved != null && resolved != chain.LastAttemptedUrl)
+                    {
+                        chain.LastAttemptedUrl = resolved;
+                        try { img.Source = new BitmapImage(new Uri(resolved, UriKind.Absolute)); }
+                        catch { }
+                        return;
+                    }
+                }
+
+                if (chain.Urls.Count > 0)
+                {
+                    var next = chain.Urls.Dequeue();
+                    chain.LastAttemptedUrl = next;
+                    try { img.Source = new BitmapImage(new Uri(next, UriKind.Absolute)); }
+                    catch { }
+                    return;
+                }
+
+                return;
+            }
+
+            // Legacy: Tag is a plain string URL
+            if (img.Tag is string fallbackUrl && !string.IsNullOrEmpty(fallbackUrl))
+            {
+                try { img.Source = new BitmapImage(new Uri(fallbackUrl, UriKind.Absolute)); }
+                catch { }
+            }
+        }
+
+        private static async Task<string?> TryResolveFromGitHub(string failedUrl)
+        {
+            try
+            {
+                using var response = await _ghResolveClient.GetAsync(failedUrl);
+                if (response.Content.Headers.ContentType?.MediaType == "image/png")
+                    return failedUrl;
+
+                var body = (await response.Content.ReadAsStringAsync())?.Trim();
+                if (!string.IsNullOrEmpty(body) && body.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                {
+                    var baseUrl = failedUrl[..(failedUrl.LastIndexOf('/') + 1)];
+                    var nameWithoutExt = body[..^4];
+                    var encodedName = Uri.EscapeDataString(nameWithoutExt);
+                    return $"{baseUrl}{encodedName}.png";
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        internal class LogoFallbackChain
+        {
+            public Queue<string> Urls { get; set; } = new();
+            public string? LastAttemptedUrl { get; set; }
+            public bool AlreadyResolved { get; set; }
+        }
+
+        private void OnLibretroLoaded()
+        {
+            if (_game == null) return;
+            Dispatcher.InvokeAsync(RetryLogo);
+        }
+
+        private void RetryLogo()
+        {
+            if (_game == null || PosterImage == null) return;
+            var (primary, fallbacks) = GetLibretroLogoUrls(_game);
+            var moreFallbacks = new List<string>(fallbacks);
+            var coverUrl = ConstruirCoverUrl(_game.game_id);
+            if (!string.IsNullOrEmpty(coverUrl))
+                moreFallbacks.Add(coverUrl);
+            if (!string.IsNullOrEmpty(_game.image_url))
+                moreFallbacks.Add(_game.image_url);
+
+            if (primary != null)
+            {
+                PosterImage.Tag = new LogoFallbackChain
+                {
+                    Urls = new Queue<string>(moreFallbacks),
+                    LastAttemptedUrl = primary
+                };
+                SetImageSafe(PosterImage, primary);
+            }
+            else if (moreFallbacks.Count > 0)
+            {
+                PosterImage.Tag = new LogoFallbackChain
+                {
+                    Urls = new Queue<string>(moreFallbacks.Skip(1)),
+                    LastAttemptedUrl = moreFallbacks[0]
+                };
+                SetImageSafe(PosterImage, moreFallbacks[0]);
+            }
+        }
+
         public void SetGame(Game game)
         {
             _game = game;
+            // Retry poster when DAT finishes loading
+            _libretroNameService.Loaded -= OnLibretroLoaded;
+            _libretroNameService.Loaded += OnLibretroLoaded;
             this.DataContext = game;
 
             lblTitle.Text = game.nombre ?? "Sin título";
             lblDescripcion.Text = game.descripcion ?? "Sin descripción";
+
+            // Game ICO (disc icon)
+            var icoUrl = ConstruirIcoUrl(game.game_id);
+            if (!string.IsNullOrEmpty(icoUrl))
+            {
+                GameIcoImage.Visibility = Visibility.Visible;
+                try { GameIcoImage.Source = new BitmapImage(new Uri(icoUrl, UriKind.Absolute)); }
+                catch { GameIcoImage.Visibility = Visibility.Collapsed; }
+            }
+            else
+            {
+                GameIcoImage.Visibility = Visibility.Collapsed;
+            }
 
             lblDeveloper.Text = string.IsNullOrEmpty(game.autor) ? "" : game.autor;
             lblPublisher.Text = string.IsNullOrEmpty(game.publisher) ? "" : $"• {game.publisher}";
@@ -132,37 +330,38 @@ namespace PS2Desktop.Vistas
                 CaracteristicasList.Visibility = Visibility.Visible;
             }
 
-            // Poster
+            // Poster — try libretro Named_Logo chain, fall back to cover images, then DB image_url
+            var (primary, fallbacks) = GetLibretroLogoUrls(game);
+            var moreFallbacks = new List<string>(fallbacks);
+            var coverUrl = ConstruirCoverUrl(game.game_id);
+            if (!string.IsNullOrEmpty(coverUrl))
+                moreFallbacks.Add(coverUrl);
             if (!string.IsNullOrEmpty(game.image_url))
-                SetImageSafe(PosterImage, game.image_url);
+                moreFallbacks.Add(game.image_url);
+
+            if (primary != null)
+            {
+                PosterImage.Tag = new LogoFallbackChain
+                {
+                    Urls = new Queue<string>(moreFallbacks),
+                    LastAttemptedUrl = primary
+                };
+                SetImageSafe(PosterImage, primary);
+            }
+            else if (moreFallbacks.Count > 0)
+            {
+                PosterImage.Tag = new LogoFallbackChain
+                {
+                    Urls = new Queue<string>(moreFallbacks.Skip(1)),
+                    LastAttemptedUrl = moreFallbacks[0]
+                };
+                SetImageSafe(PosterImage, moreFallbacks[0]);
+            }
 
             // Favorite button
             if (_session.IsLoggedIn)
             {
-                var favBtn = new Border
-                {
-                    CornerRadius = new CornerRadius(12), Height = 44, Cursor = Cursors.Hand,
-                    Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)),
-                    Margin = new Thickness(0, 10, 0, 0)
-                };
-                var favIcon = new TextBlock
-                {
-                    Text = "♡ Agregar a favoritos",
-                    Foreground = Brushes.White,
-                    FontSize = 13, FontWeight = FontWeights.SemiBold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                favBtn.Child = favIcon;
-                CardVisualHelper.FireAndForget(() => UpdateFavIconAsync(favIcon, game.id, "game"), "Error actualizando fav");
-                favBtn.MouseDown += async (s, e) =>
-                {
-                    if (_session.CurrentUser == null) return;
-                    await _favRepo.ToggleFavoriteAsync(_session.CurrentUser.id, game.id, "game");
-                    await UpdateFavIconAsync(favIcon, game.id, "game");
-                };
-
-                // Insert before the info section separator
+                var favBtn = CardVisualHelper.CreateFavButtonSidebar(game.id, "game");
                 var sidebar = (btnDownload.Parent as StackPanel);
                 if (sidebar != null)
                 {
@@ -427,6 +626,8 @@ namespace PS2Desktop.Vistas
             await CambiarMedia(newIdx);
         }
 
+        private void btnVolver_Click(object sender, RoutedEventArgs e) => Volver?.Invoke(this, EventArgs.Empty);
+
         private void btnPlayPause_Click(object sender, RoutedEventArgs e)
         {
             if (_mediaPlayer.IsPlaying)
@@ -441,9 +642,34 @@ namespace PS2Desktop.Vistas
             }
         }
 
+        private bool _isVolumeDragging = false;
+
         private void btnMute_Click(object sender, RoutedEventArgs e)
         {
             _mediaPlayer.Mute = !_mediaPlayer.Mute;
+            UpdateMuteIcon();
+        }
+
+        private void UpdateMuteIcon()
+        {
+            btnMute.Content = _mediaPlayer.Mute
+                ? this.FindResource("IconVolOff")
+                : this.FindResource("IconVolOn");
+        }
+
+        private void VolumeSlider_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
+            => _isVolumeDragging = true;
+
+        private void VolumeSlider_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+        {
+            _mediaPlayer.Volume = (int)VolumeSlider.Value;
+            _isVolumeDragging = false;
+        }
+
+        private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_mediaPlayer != null && !_isVolumeDragging)
+                _mediaPlayer.Volume = (int)e.NewValue;
         }
 
         private void TimelineSlider_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
@@ -521,13 +747,6 @@ namespace PS2Desktop.Vistas
                 await EnviarVotoAsync(val);
         }
 
-        private async System.Threading.Tasks.Task UpdateFavIconAsync(TextBlock icon, Guid itemId, string itemType)
-        {
-            if (_session.CurrentUser == null) return;
-            var isFav = await _favRepo.IsFavoriteAsync(_session.CurrentUser.id, itemId, itemType);
-            icon.Text = isFav ? "♥ Quitar de favoritos" : "♡ Agregar a favoritos";
-        }
-
         private async Task EnviarVotoAsync(int valor)
         {
             if (!_session.IsLoggedIn)
@@ -597,6 +816,7 @@ namespace PS2Desktop.Vistas
 
         public void Dispose()
         {
+            _libretroNameService.Loaded -= OnLibretroLoaded;
             _mediaPlayer?.Stop();
             _mediaPlayer?.Dispose();
             _libVLC?.Dispose();
@@ -619,6 +839,13 @@ namespace PS2Desktop.Vistas
             };
         }
 
+        private static string ConstruirCoverUrl(string? gameId)
+        {
+            if (string.IsNullOrEmpty(gameId)) return "";
+            var id = gameId.Replace("_", "-").Replace(".", "");
+            return $"https://raw.githubusercontent.com/xlenore/ps2-covers/main/covers/default/{id}.jpg";
+        }
+
         private static string TransformarGameIdParaBg(string gameId)
         {
             if (string.IsNullOrEmpty(gameId)) return gameId;
@@ -637,6 +864,28 @@ namespace PS2Desktop.Vistas
             
             // Other IDs stay as is
             return gameId;
+        }
+
+        private static string? ConstruirIcoUrl(string? gameId)
+        {
+            if (string.IsNullOrEmpty(gameId)) return null;
+            // Already formatted like SLES_537.02 → use as-is
+            if (gameId.Contains('_') && gameId.Contains('.'))
+                return $"{OplIcoBase}/{gameId}_ICO.png";
+            // SLUS-20002 → SLUS_200.02  |  SCES-52432 → SCES_524.32
+            var id = gameId.Replace("-", "_");
+            if (id.Length > 5)
+            {
+                var prefix = id.Substring(0, 4); // e.g. SLUS, SCES
+                var numbers = id.Substring(4);
+                if (numbers.Length >= 2)
+                {
+                    var part1 = numbers.Substring(0, numbers.Length - 2);
+                    var part2 = numbers.Substring(numbers.Length - 2);
+                    id = $"{prefix}_{part1}.{part2}";
+                }
+            }
+            return $"{OplIcoBase}/{id}_ICO.png";
         }
     }
 }
