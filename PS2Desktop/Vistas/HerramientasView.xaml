@@ -8,29 +8,54 @@
              Background="#121212">
 
     <UserControl.Resources>
+        <!-- OrbitOPL PS2 BIOS color tokens -->
+        <Color x:Key="NavyDarkColor">#FF161929</Color>
+        <Color x:Key="NavyBaseColor">#FF1E2136</Color>
+        <Color x:Key="NavyLightColor">#FF252A3E</Color>
+        <Color x:Key="PurplePrimaryColor">#FF5B3FBF</Color>
+        <Color x:Key="CyanAccentColor">#FF1ABFDB</Color>
+        <Color x:Key="TextMainColor">#FFE8E9F0</Color>
+        <Color x:Key="TextMutedColor">#FFB8BAC5</Color>
+        <Color x:Key="TextDimColor">#FF6B6F80</Color>
+        <Color x:Key="BorderSubtleColor">#FF2A2F42</Color>
+        <Color x:Key="TileBorderColor">#244D5280</Color>
+
+        <SolidColorBrush x:Key="NavyDarkBrush" Color="{StaticResource NavyDarkColor}"/>
+        <SolidColorBrush x:Key="NavyBaseBrush" Color="{StaticResource NavyBaseColor}"/>
+        <SolidColorBrush x:Key="NavyLightBrush" Color="{StaticResource NavyLightColor}"/>
+        <SolidColorBrush x:Key="PurplePrimaryBrush" Color="{StaticResource PurplePrimaryColor}"/>
+        <SolidColorBrush x:Key="CyanAccentBrush" Color="{StaticResource CyanAccentColor}"/>
+        <SolidColorBrush x:Key="TextMainBrush" Color="{StaticResource TextMainColor}"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
+        <SolidColorBrush x:Key="TextDimBrush" Color="{StaticResource TextDimColor}"/>
+        <SolidColorBrush x:Key="BorderSubtleBrush" Color="{StaticResource BorderSubtleColor}"/>
+
+        <!-- OrbitOPL tab button (seg-tab style) -->
         <Style x:Key="ToolTabButton" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Height" Value="40"/>
+            <Setter Property="Height" Value="36"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="GroupName" Value="Tabs"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6"
-                                Padding="14,0" VerticalAlignment="Center">
+                                Padding="14,0" BorderThickness="1" BorderBrush="Transparent"
+                                VerticalAlignment="Center">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#C9D1D9"/>
-                                <Setter TargetName="border" Property="Background" Value="#2D333B"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextMainBrush}"/>
+                                <Setter TargetName="border" Property="Background" Value="#0C5B3FBF"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter TargetName="border" Property="Background" Value="#008080"/>
+                                <Setter Property="Foreground" Value="#FFF8F9FF"/>
+                                <Setter TargetName="border" Property="Background" Value="#2E5B3FBF"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#66708C00"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -38,35 +63,37 @@
             </Setter>
         </Style>
 
+        <!-- OrbitOPL glass panel -->
         <Style x:Key="ToolCard" TargetType="Border">
-            <Setter Property="Background" Value="#2D333B"/>
-            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#B81E2136"/>
+            <Setter Property="CornerRadius" Value="14"/>
             <Setter Property="Padding" Value="24"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
-            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderBrush" Value="#244D5280"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style x:Key="ToolLabel" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,0,0,6"/>
         </Style>
 
         <Style x:Key="ToolInput" TargetType="TextBox">
-            <Setter Property="Background" Value="#1C2128"/>
-            <Setter Property="Foreground" Value="#C9D1D9"/>
-            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="Background" Value="#CC12152A"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMainBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="CaretBrush" Value="#C9D1D9"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextMainBrush}"/>
         </Style>
 
+        <!-- OrbitOPL primary button (electric blue / purple) -->
         <Style x:Key="AccentButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#008080"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource PurplePrimaryBrush}"/>
+            <Setter Property="Foreground" Value="#FFF8F9FF"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -74,19 +101,19 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#009999"/>
+                                <Setter TargetName="border" Property="Background" Value="#DD6B4FCC"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#006666"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF4B2FAF"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
-                                <Setter Property="Foreground" Value="#484F58"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -95,8 +122,8 @@
         </Style>
 
         <Style x:Key="DangerButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#DA3633"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#FF8B2020"/>
+            <Setter Property="Foreground" Value="#FFF8F9FF"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -104,19 +131,19 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#E5534B"/>
+                                <Setter TargetName="border" Property="Background" Value="#FFA32828"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#B62324"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF701818"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
-                                <Setter Property="Foreground" Value="#484F58"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -126,8 +153,8 @@
 
         <Style x:Key="GhostButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#8B949E"/>
-            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderSubtleBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -135,17 +162,17 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#2D333B"/>
-                                <Setter Property="Foreground" Value="#C9D1D9"/>
+                                <Setter TargetName="border" Property="Background" Value="#1A5B3FBF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextMainBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Foreground" Value="#484F58"/>
-                                <Setter TargetName="border" Property="BorderBrush" Value="#21262D"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="#20242A"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -154,8 +181,8 @@
         </Style>
 
         <Style x:Key="MediumButton" TargetType="Button">
-            <Setter Property="Background" Value="#444C56"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource NavyLightBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMainBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="12"/>
@@ -163,19 +190,19 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="border" Background="{TemplateBinding Background}"
-                                CornerRadius="3" Padding="12,6">
+                                CornerRadius="6" Padding="12,6">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#545D68"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF2E3348"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="#373E47"/>
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="#21262D"/>
-                                <Setter Property="Foreground" Value="#484F58"/>
+                                <Setter TargetName="border" Property="Background" Value="#FF1A1D2A"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -184,25 +211,102 @@
         </Style>
 
         <Style x:Key="SummaryBox" TargetType="Border">
-            <Setter Property="Background" Value="#1C2128"/>
-            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#991E2136"/>
+            <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="16,12"/>
-            <Setter Property="BorderBrush" Value="#373E47"/>
+            <Setter Property="BorderBrush" Value="#244D5280"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
 
         <Style x:Key="ProgressTrack" TargetType="Border">
-            <Setter Property="Background" Value="#373E47"/>
-            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Background" Value="{StaticResource BorderSubtleBrush}"/>
+            <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="Height" Value="8"/>
         </Style>
 
         <Style x:Key="ProgressFill" TargetType="Border">
-            <Setter Property="Background" Value="#008080"/>
-            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Background" Value="{StaticResource PurplePrimaryBrush}"/>
+            <Setter Property="CornerRadius" Value="4"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Width" Value="0"/>
         </Style>
+
+
+        <!-- UL Game Card Template (OrbitOPL style) -->
+        <DataTemplate x:Key="UlGameCardTemplate">
+            <Border x:Name="GameCard" CornerRadius="8" ClipToBounds="True" Cursor="Hand">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter Property="BorderBrush" Value="#5e009b"/>
+                                <Setter Property="BorderThickness" Value="2"/>
+                            </DataTrigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="#5e009b"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="240"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Cover area -->
+                    <Border Grid.Row="0" ClipToBounds="True" Background="#1A1D2E">
+                        <Grid>
+                            <Image x:Name="CoverImg" Source="{Binding CoverPath}" Stretch="UniformToFill"
+                                   RenderOptions.BitmapScalingMode="HighQuality">
+                                <Image.Style>
+                                    <Style TargetType="Image">
+                                        <Setter Property="Opacity" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CoverPath}" Value="">
+                                                <Setter Property="Opacity" Value="0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Image.Style>
+                            </Image>
+                            <!-- Gradient overlay -->
+                            <Border VerticalAlignment="Bottom" Height="100">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
+                                        <GradientStop Color="#EE0C0E1A" Offset="0"/>
+                                        <GradientStop Color="#B00C0E1A" Offset="0.45"/>
+                                        <GradientStop Color="Transparent" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+                            <!-- System tag -->
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,6,0,0"
+                                    CornerRadius="4" Padding="6,2" Background="#5e009b" Opacity="0.9">
+                                <TextBlock Text="{Binding MediaLabel}" FontSize="9" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Title + meta -->
+                    <StackPanel Grid.Row="1" Margin="8,6,8,8">
+                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="#C9D1D9" TextTrimming="CharacterEllipsis" MaxHeight="32" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <Border Background="#5e009b22" CornerRadius="3" Padding="5,1" Margin="0,0,4,0">
+                                <TextBlock Text="{Binding GameId}" FontSize="9" Foreground="#5e009b" FontFamily="Consolas"/>
+                            </Border>
+                            <Border Background="#8B949E22" CornerRadius="3" Padding="5,1">
+                                <TextBlock Text="{Binding Parts, StringFormat='{}{0} partes'}" FontSize="9" Foreground="#8B949E"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="{Binding SizeDisplay}" FontSize="9" Foreground="#8B949E" Margin="0,3,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="True">
@@ -216,8 +320,10 @@
                     BorderBrush="#373E47" BorderThickness="1">
                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                     <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="TabImportar" Content="Importar" Style="{StaticResource ToolTabButton}"
+                                     Click="Tab_Click"/>
                         <RadioButton x:Name="TabArchivos" Content="Lista de Archivos" Style="{StaticResource ToolTabButton}"
-                                     IsChecked="True" Click="Tab_Click"/>
+                                     Click="Tab_Click"/>
                         <RadioButton x:Name="TabUlCfg" Content="Lista de UL (ul.cfg)" Style="{StaticResource ToolTabButton}"
                                      Click="Tab_Click"/>
                         <RadioButton x:Name="TabBinToIso" Content="Lista de BIN" Style="{StaticResource ToolTabButton}"
@@ -231,6 +337,218 @@
                     </StackPanel>
                 </ScrollViewer>
             </Border>
+
+            <!-- ===== TAB: Importar ===== -->
+            <StackPanel x:Name="PanelImportar" Visibility="Collapsed">
+                <Border Style="{StaticResource ToolCard}">
+                    <StackPanel>
+                        <TextBlock Text="Importar Juegos" Foreground="White" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <TextBlock Text="Importa juegos PS2 DVD, PS2 CD, PS1 y Apps a tu librería OPL."
+                                   Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
+
+                        <!-- Import Target -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Destino OPL" Style="{StaticResource ToolLabel}"/>
+                                <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                                    <Grid>
+                                        <TextBlock x:Name="LblImportRoot" Text="Selecciona carpeta raíz OPL..." Foreground="#484F58"
+                                                   VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                            <Button Grid.Column="2" Content="Examinar..." Style="{StaticResource AccentButtonStyle}"
+                                    Height="38" Width="120" FontSize="13" VerticalAlignment="Bottom" Margin="0,24,0,0"
+                                    Click="BtnImportSelectRoot_Click"/>
+                        </Grid>
+
+                        <!-- Import Type Tabs -->
+                        <Border Background="#1C2128" CornerRadius="6" Padding="4" Margin="0,0,0,16"
+                                BorderBrush="#373E47" BorderThickness="1">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="TabImportPs2Dvd" Content="PS2 DVD (ISO/ZSO)" Style="{StaticResource ToolTabButton}"
+                                             IsChecked="True" GroupName="ImportTabs" Click="TabImport_Click"/>
+                                <RadioButton x:Name="TabImportPs2Cd" Content="PS2 CD (CUE/BIN)" Style="{StaticResource ToolTabButton}"
+                                             GroupName="ImportTabs" Click="TabImport_Click"/>
+                                <RadioButton x:Name="TabImportPs1" Content="PS1 (CUE → VCD)" Style="{StaticResource ToolTabButton}"
+                                             GroupName="ImportTabs" Click="TabImport_Click"/>
+                                <RadioButton x:Name="TabImportApps" Content="Apps (ELF)" Style="{StaticResource ToolTabButton}"
+                                             GroupName="ImportTabs" Click="TabImport_Click"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- PS2 DVD Import Panel -->
+                        <StackPanel x:Name="PanelImportPs2Dvd" Visibility="Visible">
+                            <TextBlock Text="Selecciona archivos ISO o ZSO para importar a DVD/"
+                                       Foreground="#8B949E" FontSize="12" Margin="0,0,0,12"/>
+
+                            <Border Background="#1C2128" CornerRadius="6" BorderBrush="#373E47" BorderThickness="1" MinHeight="120" MaxHeight="250">
+                                <DataGrid x:Name="LvImportFiles" AutoGenerateColumns="False" Background="Transparent"
+                                          BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
+                                          CanUserAddRows="False" SelectionMode="Extended" RowBackground="#2D333B"
+                                          AlternatingRowBackground="#252C35" Foreground="#C9D1D9" FontSize="12">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Archivo" Binding="{Binding FileName}" Width="300" IsReadOnly="True">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#C9D1D9"/>
+                                                    <Setter Property="Padding" Value="6,5"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Game ID" Binding="{Binding GameId}" Width="120" IsReadOnly="True">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#008080"/>
+                                                    <Setter Property="FontFamily" Value="Consolas"/>
+                                                    <Setter Property="Padding" Value="6,5"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeDisplay}" Width="100" IsReadOnly="True">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#8B949E"/>
+                                                    <Setter Property="Padding" Value="6,5"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#373E47"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="#008080"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.ColumnHeaderStyle>
+                                        <Style TargetType="DataGridColumnHeader">
+                                            <Setter Property="Background" Value="#1C2128"/>
+                                            <Setter Property="Foreground" Value="#8B949E"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="FontSize" Value="11"/>
+                                            <Setter Property="Padding" Value="6,8"/>
+                                            <Setter Property="BorderBrush" Value="#373E47"/>
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        </Style>
+                                    </DataGrid.ColumnHeaderStyle>
+                                </DataGrid>
+                            </Border>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="+ Agregar archivos" Style="{StaticResource AccentButtonStyle}"
+                                        Height="36" Width="150" FontSize="13" Click="BtnImportAddFiles_Click"/>
+                                <Button Content="Limpiar lista" Style="{StaticResource GhostButtonStyle}"
+                                        Height="36" Width="110" FontSize="13" Margin="8,0,0,0" Click="BtnImportClear_Click"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox x:Name="ChkImportDownloadArt" Content="Descargar arte después de importar"
+                                          Foreground="#8B949E" FontSize="13" IsChecked="True" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Content="Importar" Style="{StaticResource AccentButtonStyle}"
+                                        Height="40" Width="140" FontSize="14" Click="BtnImportStart_Click" x:Name="BtnImportStart"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- PS2 CD Import Panel -->
+                        <StackPanel x:Name="PanelImportPs2Cd" Visibility="Collapsed">
+                            <TextBlock Text="Selecciona archivos CUE para convertir a ISO y copiar a CD/"
+                                       Foreground="#8B949E" FontSize="12" Margin="0,0,0,12"/>
+                            <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="LblImportPs2CdPath" Text="Selecciona archivo CUE..." Foreground="#484F58"
+                                               VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                    <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                            Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnImportSelectPs2Cd_Click"/>
+                                </Grid>
+                            </Border>
+                            <Button Content="Importar PS2 CD" Style="{StaticResource AccentButtonStyle}"
+                                    Height="40" Width="160" FontSize="14" Margin="0,12,0,0" Click="BtnImportPs2Cd_Click"/>
+                        </StackPanel>
+
+                        <!-- PS1 Import Panel -->
+                        <StackPanel x:Name="PanelImportPs1" Visibility="Collapsed">
+                            <TextBlock Text="Selecciona archivos CUE para convertir a VCD (POPStarter)"
+                                       Foreground="#8B949E" FontSize="12" Margin="0,0,0,12"/>
+                            <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="LblImportPs1Path" Text="Selecciona archivo CUE..." Foreground="#484F58"
+                                               VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                    <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                            Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnImportSelectPs1_Click"/>
+                                </Grid>
+                            </Border>
+                            <Button Content="Importar PS1" Style="{StaticResource AccentButtonStyle}"
+                                    Height="40" Width="160" FontSize="14" Margin="0,12,0,0" Click="BtnImportPs1_Click"/>
+                        </StackPanel>
+
+                        <!-- Apps Import Panel -->
+                        <StackPanel x:Name="PanelImportApps" Visibility="Collapsed">
+                            <TextBlock Text="Selecciona archivos ELF para importar como Apps"
+                                       Foreground="#8B949E" FontSize="12" Margin="0,0,0,12"/>
+                            <Border Background="#1C2128" CornerRadius="3" BorderBrush="#373E47" BorderThickness="1" Height="38">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock x:Name="LblImportAppsPath" Text="Selecciona archivo ELF..." Foreground="#484F58"
+                                               VerticalAlignment="Center" Margin="10,0" FontSize="13"/>
+                                    <Button Grid.Column="1" Content="Examinar" Style="{StaticResource AccentButtonStyle}"
+                                            Height="28" Width="90" FontSize="12" Margin="0,5,5,5" Click="BtnImportSelectApps_Click"/>
+                                </Grid>
+                            </Border>
+                            <TextBlock Text="Nombre del título" Style="{StaticResource ToolLabel}" Margin="0,12,0,6"/>
+                            <TextBox x:Name="TxtImportAppsTitle" Style="{StaticResource ToolInput}" MaxLength="32"/>
+                            <Button Content="Importar Apps" Style="{StaticResource AccentButtonStyle}"
+                                    Height="40" Width="160" FontSize="14" Margin="0,12,0,0" Click="BtnImportApps_Click"/>
+                        </StackPanel>
+
+                        <!-- Import Progress -->
+                        <Grid x:Name="ImportProgressPanel" Margin="0,16,0,0" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="8"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtImportProgress" Foreground="#C9D1D9" FontSize="12"/>
+                            <TextBlock Grid.Column="1" x:Name="TxtImportPercent" Foreground="#008080" FontSize="12" FontWeight="SemiBold"/>
+                            <Border Grid.Row="1" Style="{StaticResource ProgressTrack}">
+                                <Border x:Name="ImportProgressBar" Style="{StaticResource ProgressFill}"/>
+                            </Border>
+                            <TextBlock Grid.Row="2" x:Name="TxtImportStatus" Foreground="#8B949E" FontSize="11" Margin="0,4,0,0"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
 
             <!-- ===== TAB: Lista de Archivos ===== -->
             <StackPanel x:Name="PanelArchivos" Visibility="Visible">
@@ -284,8 +602,8 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="Unidad" Style="{StaticResource ToolLabel}"/>
-                                <ComboBox x:Name="CmbFileDrive" Background="#1C2128" Foreground="#C9D1D9"
-                                          BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                                <ComboBox x:Name="CmbFileDrive" Style="{StaticResource DarkComboBoxStyle}"
+                                          Height="38" Padding="10,0"
                                           DisplayMemberPath="Text" SelectedValuePath="Tag"/>
                             </StackPanel>
                             <Button Grid.Column="2" Content="Explorar" Style="{StaticResource AccentButtonStyle}"
@@ -496,7 +814,7 @@
                 </Border>
             </StackPanel>
 
-            <!-- ===== TAB: Lista de UL (ul.cfg) ===== -->
+<!-- ===== TAB: Lista de UL (ul.cfg) ===== -->
             <StackPanel x:Name="PanelUlCfg" Visibility="Collapsed">
                 <Border Style="{StaticResource ToolCard}">
                     <StackPanel>
@@ -504,112 +822,281 @@
                         <TextBlock Text="Visualiza, crea y edita el archivo ul.cfg que usa OPL para listar los juegos en USB."
                                    Foreground="#8B949E" FontSize="12" Margin="0,0,0,16"/>
 
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Text="Unidad" Style="{StaticResource ToolLabel}"/>
-                                <ComboBox x:Name="CmbCfgDrive" Background="#1C2128" Foreground="#C9D1D9"
-                                          BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
-                                          DisplayMemberPath="Text" SelectedValuePath="Tag"/>
-                            </StackPanel>
-                            <Button Grid.Column="2" Content="Cargar" Style="{StaticResource AccentButtonStyle}"
-                                    Height="38" Width="100" FontSize="13" VerticalAlignment="Bottom" Margin="0,24,0,0"
-                                    Click="BtnLoadCfg_Click"/>
-                        </Grid>
+                        <!-- Toolbar -->
+                        <Border Background="#1C2128" CornerRadius="10" BorderBrush="#373E47" BorderThickness="1" Padding="16" Margin="0,0,0,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                        <Border Background="#1C2128" CornerRadius="6" Margin="0,12,0,0" MinHeight="200" MaxHeight="400"
-                                BorderBrush="#373E47" BorderThickness="1">
-                            <DataGrid x:Name="DgUlGames" AutoGenerateColumns="False" Background="Transparent"
-                                      BorderThickness="0" GridLinesVisibility="None" HeadersVisibility="Column"
-                                      CanUserAddRows="False" SelectionMode="Single" SelectionChanged="DgUlGames_SelectionChanged"
-                                      RowBackground="#2D333B" AlternatingRowBackground="#252C35"
-                                      Foreground="#C9D1D9" FontSize="12">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#C9D1D9"/>
-                                                <Setter Property="FontSize" Value="13"/>
-                                                <Setter Property="Padding" Value="6,6"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Game ID" Binding="{Binding GameId}" Width="120" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#008080"/>
-                                                <Setter Property="FontFamily" Value="Consolas"/>
-                                                <Setter Property="FontSize" Value="12"/>
-                                                <Setter Property="Padding" Value="6,6"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Partes" Binding="{Binding Parts}" Width="60" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#8B949E"/>
-                                                <Setter Property="TextAlignment" Value="Center"/>
-                                                <Setter Property="Padding" Value="6,6"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Media" Width="60" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#8B949E"/>
-                                                <Setter Property="TextAlignment" Value="Center"/>
-                                                <Setter Property="Padding" Value="6,6"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                    <DataGridTextColumn Header="Tamaño" Binding="{Binding SizeDisplay}" Width="90" IsReadOnly="True">
-                                        <DataGridTextColumn.ElementStyle>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#8B949E"/>
-                                                <Setter Property="TextAlignment" Value="Right"/>
-                                                <Setter Property="Padding" Value="6,6"/>
-                                            </Style>
-                                        </DataGridTextColumn.ElementStyle>
-                                    </DataGridTextColumn>
-                                </DataGrid.Columns>
-                                <DataGrid.RowStyle>
-                                    <Style TargetType="DataGridRow">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#373E47"/>
-                                            </Trigger>
-                                            <Trigger Property="IsSelected" Value="True">
-                                                <Setter Property="Background" Value="#008080"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGrid.RowStyle>
-                                <DataGrid.ColumnHeaderStyle>
-                                    <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background" Value="#1C2128"/>
-                                        <Setter Property="Foreground" Value="#8B949E"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="FontSize" Value="11"/>
-                                        <Setter Property="Padding" Value="6,8"/>
-                                        <Setter Property="BorderBrush" Value="#373E47"/>
-                                        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                    </Style>
-                                </DataGrid.ColumnHeaderStyle>
-                            </DataGrid>
+                                <!-- Drive Selector -->
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                                    <TextBlock Text="Unidad" Style="{StaticResource ToolLabel}"/>
+                                    <ComboBox x:Name="CmbUlDrive" Style="{StaticResource DarkComboBoxStyle}"
+                                              Height="40" Width="180" Padding="10,0"
+                                              DisplayMemberPath="Text" SelectedValuePath="Tag"
+                                              SelectionChanged="CmbUlDrive_SelectionChanged"/>
+                                </StackPanel>
+
+                                <!-- System Tabs -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" x:Name="UlSystemTabsPanel" Margin="0,0,24,0">
+                                    <!-- Tabs added dynamically in code-behind -->
+                                </StackPanel>
+
+                                <!-- Search, Sort, View Toggle -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <!-- Search -->
+                                    <Border Background="#121212" CornerRadius="8" Height="40" Width="320"
+                                            BorderBrush="#373E47" BorderThickness="1">
+                                        <Grid Margin="12,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Path Grid.Column="0" Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                                                  Fill="#8B949E" Stretch="Uniform" Width="16" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBox x:Name="TxtUlSearch" Grid.Column="1" Text="Buscar juegos..."
+                                                     Background="Transparent" BorderThickness="0" VerticalAlignment="Center"
+                                                     FontSize="13" Foreground="{DynamicResource TextMainBrush}" CaretBrush="#5e009b"
+                                                     GotFocus="TxtUlSearch_GotFocus" LostFocus="TxtUlSearch_LostFocus"
+                                                     TextChanged="TxtUlSearch_TextChanged" KeyDown="TxtUlSearch_KeyDown"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Sort -->
+                                    <ComboBox x:Name="CboUlSort" Margin="16,0,0,0" Width="160" Height="40"
+                                              Style="{StaticResource DarkComboBoxStyle}" SelectionChanged="CboUlSort_SelectionChanged">
+                                        <ComboBoxItem Content="Más recientes" Tag="date_desc" IsSelected="True"/>
+                                        <ComboBoxItem Content="Más antiguos" Tag="date_asc"/>
+                                        <ComboBoxItem Content="Nombre A-Z" Tag="name_asc"/>
+                                        <ComboBoxItem Content="Nombre Z-A" Tag="name_desc"/>
+                                    </ComboBox>
+
+                                    <!-- View Toggle -->
+                                    <ToggleButton x:Name="BtnUlViewToggle" Margin="16,0,0,0" Width="44" Height="40"
+                                                  Style="{StaticResource DarkToggleButtonStyle}" Checked="BtnUlViewToggle_Checked" Unchecked="BtnUlViewToggle_Unchecked">
+                                        <Path Data="M4 4h6v6H4V4zm8 0h6v6h-6V4zm0 8h6v6h-6v-6zm-8 8h6v6H4v-6z"
+                                              Fill="{DynamicResource TextMainBrush}" Stretch="Uniform" Width="18" Height="18"/>
+                                    </ToggleButton>
+                                </StackPanel>
+
+                                <!-- Stats & Actions -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,0">
+                                    <TextBlock x:Name="TxtUlGameCount" Text="0 juegos" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                                    <Button x:Name="BtnUlRefresh" Content="↻" Style="{StaticResource PaginationButtonStyle}" FontSize="18" Width="40" Height="40" Click="BtnUlRefresh_Click" ToolTip="Actualizar (F5)"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <Button x:Name="BtnDeleteGame" Content="Eliminar juego seleccionado"
-                                    Style="{StaticResource DangerButtonStyle}" Height="36" Width="200"
-                                    FontSize="13" Click="BtnDeleteGame_Click" IsEnabled="False"/>
-                            <TextBlock x:Name="TxtCfgStatus" Foreground="#8B949E" FontSize="12"
-                                       VerticalAlignment="Center" Margin="16,0,0,0"/>
-                        </StackPanel>
+                        <!-- Game Grid (full-width) -->
+                        <Border x:Name="UlGridContainer" Background="#1C2128" CornerRadius="10" BorderBrush="#373E47" BorderThickness="1" ClipToBounds="True">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock x:Name="TxtUlGamesHeader" Text="Juegos en ul.cfg" Foreground="#8B949E" FontSize="11" FontWeight="SemiBold"
+                                           Margin="12,10,12,6"/>
+                                <ScrollViewer x:Name="UlGamesScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True">
+                                    <ListBox x:Name="UlGamesListBox" Background="Transparent" BorderThickness="0"
+                                             SelectionMode="Single" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ScrollViewer.CanContentScroll="False" MouseDoubleClick="UlGamesListBox_MouseDoubleClick">
+                                        <ListBox.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Columns="5" Margin="8,8,8,8"/>
+                                            </ItemsPanelTemplate>
+                                        </ListBox.ItemsPanel>
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="4"/>
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <Border x:Name="Bd" Background="Transparent"
+                                                                    BorderBrush="Transparent" BorderThickness="2"
+                                                                    Padding="{TemplateBinding Padding}"
+                                                                    SnapsToDevicePixels="True" CornerRadius="10">
+                                                                <ContentPresenter HorizontalAlignment="Stretch"
+                                                                                  VerticalAlignment="Stretch"
+                                                                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#731ABFDB"/>
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#0C1ABFDB"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsSelected" Value="True">
+                                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#AA5B3FBF"/>
+                                                                    <Setter TargetName="Bd" Property="Background" Value="#1A5B3FBF"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                    </ListBox>
+                                </ScrollViewer>
+
+                                <!-- Skeleton Loading -->
+                                <UniformGrid x:Name="UlSkeletonPanel" Grid.Row="1" Columns="5" Margin="8,8,8,8" Visibility="Collapsed">
+                                    <Border Margin="4" Style="{StaticResource SkeletonRect}" CornerRadius="10"/>
+                                    <Border Margin="4" Style="{StaticResource SkeletonRect}" CornerRadius="10"/>
+                                    <Border Margin="4" Style="{StaticResource SkeletonRect}" CornerRadius="10"/>
+                                    <Border Margin="4" Style="{StaticResource SkeletonRect}" CornerRadius="10"/>
+                                </UniformGrid>
+
+                                <!-- Pagination -->
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,12">
+                                    <Button x:Name="BtnUlPrevPage" Content="◀" Style="{StaticResource PaginationButtonStyle}" FontSize="18" Click="BtnUlPrevPage_Click"/>
+                                    <TextBlock x:Name="TxtUlPageInfo" Text="1" Foreground="{DynamicResource TextMainBrush}" VerticalAlignment="Center" Margin="10,0" FontSize="14" FontWeight="SemiBold"/>
+                                    <TextBlock Text="/" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtUlTotalPages" Text="1" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" Margin="5,0,10,0"/>
+                                    <Button x:Name="BtnUlNextPage" Content="▶" Style="{StaticResource PaginationButtonStyle}" FontSize="18" Click="BtnUlNextPage_Click"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Detail Overlay (full-page, OrbitOPL style) -->
+                        <Border x:Name="UlDetailOverlay" Background="#1C2128" CornerRadius="10" BorderBrush="#373E47" BorderThickness="1" ClipToBounds="True" Visibility="Collapsed">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Blurred BG background -->
+                                <Image x:Name="UlDetailBg" Grid.RowSpan="2" Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="LowQuality" Opacity="0.35" ClipToBounds="True"/>
+
+                                <!-- Scrim gradient overlay -->
+                                <Border Grid.RowSpan="2">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#EE0C0E1A" Offset="0"/>
+                                            <GradientStop Color="#EE0C0E1A" Offset="0.35"/>
+                                            <GradientStop Color="#F50B0D17" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+
+                                <!-- Header: Back button + Title -->
+                                <Grid Grid.Row="0" Margin="16,12,16,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="BtnUlDetailBack" Grid.Column="0" Content="&#x25C0; Volver"
+                                            Style="{StaticResource GhostButtonStyle}" FontSize="13" Height="32" Padding="10,0"
+                                            Click="BtnUlDetailBack_Click"/>
+                                    <TextBlock x:Name="TxtUlDetailTitle" Grid.Column="1" Text="" FontSize="18" FontWeight="Bold"
+                                               Foreground="White" VerticalAlignment="Center" Margin="16,0,0,0" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- Detail content -->
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <Grid Margin="20,12,20,20">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Row 0: Cover + Info -->
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="220"/>
+                                                <ColumnDefinition Width="24"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border CornerRadius="8" Background="#121212" BorderBrush="#373E47" BorderThickness="1" ClipToBounds="True">
+                                                <Image x:Name="DetailCover" Stretch="Uniform" Margin="4"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                                <TextBlock x:Name="DetailName" FontSize="22" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <Border x:Name="DetailMediaBadge" CornerRadius="4" Padding="6,2" Margin="0,0,6,0">
+                                                        <TextBlock x:Name="DetailMedia" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                                    </Border>
+                                                    <Border Background="#8B949E33" CornerRadius="4" Padding="6,2" Margin="0,0,6,0" BorderBrush="#8B949E30" BorderThickness="1">
+                                                        <TextBlock x:Name="DetailGameId" FontSize="10" Foreground="#8B949E" FontFamily="Consolas"/>
+                                                    </Border>
+                                                    <Border Background="#82C8D825" CornerRadius="4" Padding="6,2" BorderBrush="#82C8D844" BorderThickness="1">
+                                                        <TextBlock x:Name="DetailRegion" FontSize="10" Foreground="#82C8D8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Grid Margin="0,12,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" MinWidth="90"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto" MinWidth="90"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Partes" Foreground="#8B949E" FontSize="11" Margin="0,0,12,4"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="DetailParts" Foreground="#C9D1D9" FontSize="11" FontWeight="SemiBold" Margin="0,0,24,4"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Tamaño" Foreground="#8B949E" FontSize="11" Margin="0,0,12,4"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="3" x:Name="DetailSize" Foreground="#C9D1D9" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- Row 1: Icon + Screenshots -->
+                                        <Grid Grid.Row="1" Margin="0,16,0,0" Height="130">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="12"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border CornerRadius="6" Background="#121212" BorderBrush="#373E47" BorderThickness="1" ClipToBounds="True">
+                                                <Image x:Name="DetailIcon" Stretch="Uniform" Margin="8"
+                                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Border>
+                                            <ScrollViewer Grid.Column="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                                <ItemsControl x:Name="DetailScreenshots" Height="120">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border CornerRadius="6" Background="#121212" BorderBrush="#373E47" BorderThickness="1" Margin="0,0,8,0" Width="240" ClipToBounds="True">
+                                                                <Image Source="{Binding}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" Margin="4"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </Grid>
+
+                                        <!-- Row 2: Actions -->
+                                        <Border Grid.Row="2" Margin="0,16,0,0" Padding="12" Background="#2D333BAA" CornerRadius="6" BorderBrush="#373E47" BorderThickness="1">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Eliminar juego" Style="{StaticResource DangerButtonStyle}" Height="34" Width="130" FontSize="12"
+                                                        Click="BtnDeleteGame_Click" IsEnabled="False" x:Name="BtnDeleteGame"/>
+                                                <Button Content="Renombrar" Style="{StaticResource MediumButtonStyle}" Height="34" Width="100" FontSize="12" Margin="8,0,0,0"
+                                                        Click="BtnRenameGame_Click"/>
+                                                <Button Content="Exportar ART" Style="{StaticResource MediumButtonStyle}" Height="34" Width="110" FontSize="12" Margin="8,0,0,0"
+                                                        Click="BtnExportArt_Click"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+
+<TextBlock x:Name="TxtUlCfgStatus" Foreground="#8B949E" FontSize="12" Margin="0,12,0,0"/>
                     </StackPanel>
                 </Border>
             </StackPanel>
@@ -694,8 +1181,8 @@
                         </Border>
 
                         <TextBlock Text="Unidad a formatear" Style="{StaticResource ToolLabel}"/>
-                        <ComboBox x:Name="CmbFat32Drive" Background="#1C2128" Foreground="#C9D1D9"
-                                  BorderBrush="#373E47" BorderThickness="1" Height="38" Padding="10,0"
+                        <ComboBox x:Name="CmbFat32Drive" Style="{StaticResource DarkComboBoxStyle}"
+                                  Height="38" Padding="10,0"
                                   DisplayMemberPath="Text" SelectedValuePath="Tag"/>
 
                         <TextBlock Text="Etiqueta del volumen (opcional)" Style="{StaticResource ToolLabel}" Margin="0,12,0,6"/>

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -20,15 +21,12 @@ namespace PS2Desktop.Services
             var table = new uint[256];
             for (uint i = 0; i < 256; i++)
             {
-                uint crc = i << 24;
+                uint crc = i;
                 for (int j = 0; j < 8; j++)
                 {
-                    if ((crc & 0x80000000) != 0)
-                        crc = (crc << 1) ^ 0x04C11DB7;
-                    else
-                        crc <<= 1;
+                    crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
                 }
-                table[255 - i] = crc;
+                table[i] = crc;
             }
             return table;
         }
@@ -36,12 +34,12 @@ namespace PS2Desktop.Services
         public static uint Crc32(string str)
         {
             byte[] bytes = Encoding.ASCII.GetBytes(str);
-            uint crc = 0;
+            uint crc = 0xFFFFFFFF;
             foreach (byte b in bytes)
             {
-                crc = CrcTable[b ^ ((crc >> 24) & 0xFF)] ^ ((crc << 8) & 0xFFFFFF00);
+                crc = (crc >> 8) ^ CrcTable[(crc ^ b) & 0xFF];
             }
-            return crc;
+            return crc ^ 0xFFFFFFFF;
         }
 
         public struct GameInfo
@@ -138,7 +136,12 @@ namespace PS2Desktop.Services
 
         public static UlGameEntry[] ReadUlCfg(string drive)
         {
+            string drivePath = drive.Length == 1 ? drive + ":\\" : drive + "\\";
             string cfgPath = GetCfgFilePath(drive);
+
+            Debug.WriteLine($"[UL] drive={drive} drivePath={drivePath} cfgPath={cfgPath}");
+            Debug.WriteLine($"[UL] cfg exists: {File.Exists(cfgPath)}");
+
             if (!File.Exists(cfgPath)) return Array.Empty<UlGameEntry>();
 
             var entries = new System.Collections.Generic.List<UlGameEntry>();
@@ -146,42 +149,97 @@ namespace PS2Desktop.Services
             using (var fs = new FileStream(cfgPath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var br = new BinaryReader(fs))
             {
+                // Read all ul.* files in root directory only (matches OrbitOPL approach)
+                string[] allUlFiles;
+                try { allUlFiles = Directory.GetFiles(drivePath, "ul.*", SearchOption.TopDirectoryOnly); }
+                catch (Exception ex) { Debug.WriteLine($"[UL] GetFiles error: {ex.Message}"); allUlFiles = Array.Empty<string>(); }
+
+                Debug.WriteLine($"[UL] Found {allUlFiles.Length} ul.* files in {drivePath}");
+                foreach (var f in allUlFiles.Take(5))
+                    Debug.WriteLine($"[UL]   {Path.GetFileName(f)}");
+
                 while (fs.Position + 64 <= fs.Length)
                 {
                     byte[] entry = br.ReadBytes(64);
                     if (entry.Length < 64) break;
 
                     string name = Encoding.ASCII.GetString(entry, 0, 32).TrimEnd('\0');
-                    string image = Encoding.ASCII.GetString(entry, 32, 15).TrimEnd('\0');
+                    string gameIdRaw = Encoding.ASCII.GetString(entry, 32, 15).TrimEnd('\0');
                     byte parts = entry[47];
                     byte media = entry[48];
 
                     if (string.IsNullOrEmpty(name)) continue;
-                    string gameId = image.StartsWith("ul.") ? image.Substring(3) : "";
+
+                    // Normalize gameId: strip "ul." prefix, dots, hyphens → XXXX_NNNNN
+                    string gameIdClean = gameIdRaw
+                        .Replace("ul.", "").Replace("ul_", "").Replace("ul-", "")
+                        .Replace(".", "").Replace("-", "").Replace("_", "")
+                        .ToUpperInvariant();
+                    // Reformat to XXXX_###.## if we have enough chars
+                    string gameIdNorm = gameIdClean.Length >= 9
+                        ? $"{gameIdClean.Substring(0, 4)}_{gameIdClean.Substring(4, 3)}.{gameIdClean.Substring(7, 2)}"
+                        : gameIdClean;
 
                     long totalSize = 0;
-                    if (parts > 0 && !string.IsNullOrEmpty(gameId))
+                    int foundParts = 0;
+
+                    if (parts > 0)
                     {
+                        // 1) Match by CRC32(name) only — OPL format: ul.{CRC}.{GAMEID}.XX
                         uint crc = Crc32(name);
-                        string drivePath = drive.Length == 1 ? drive + ":\\" : drive + "\\";
-                        for (int i = 0; i < parts; i++)
+                        string prefixCrc = $"ul.{crc:X8}.";
+
+                        Debug.WriteLine($"[UL] name=\"{name}\" crc={crc:X8} prefixCrc={prefixCrc} parts={parts}");
+
+                        foreach (var filePath in allUlFiles)
                         {
-                            string partPath = Path.Combine(drivePath, $"ul.{crc:X8}.{gameId}.{i:D2}");
-                            if (File.Exists(partPath))
-                                totalSize += new FileInfo(partPath).Length;
+                            string upperName = Path.GetFileName(filePath).ToUpperInvariant();
+                            if (upperName.StartsWith(prefixCrc))
+                            {
+                                try
+                                {
+                                    totalSize += new FileInfo(filePath).Length;
+                                    foundParts++;
+                                }
+                                catch { }
+                            }
+                        }
+
+                        // 2) Fallback: match by gameId appearing anywhere in filename
+                        //    OPL format: ul.{CRC}.{GAMEID}.{PART}
+                        if (foundParts == 0)
+                        {
+                            string gameIdUpper = gameIdRaw.Replace("ul.", "").Replace("ul_", "").Replace("ul-", "").Trim().ToUpperInvariant();
+                            Debug.WriteLine($"[UL] fallback: searching for gameId \"{gameIdUpper}\" in filenames");
+                            foreach (var filePath in allUlFiles)
+                            {
+                                string upperName = Path.GetFileName(filePath).ToUpperInvariant();
+                                if (upperName.Contains($".{gameIdUpper}.") || upperName.Contains($".{gameIdUpper.Replace(".", "")}."))
+                                {
+                                    try
+                                    {
+                                        totalSize += new FileInfo(filePath).Length;
+                                        foundParts++;
+                                    }
+                                    catch { }
+                                }
+                            }
                         }
                     }
+
+                    Debug.WriteLine($"[UL] => {name}: foundParts={foundParts} totalSize={totalSize} ({FormatSize(totalSize)})");
 
                     entries.Add(new UlGameEntry
                     {
                         Name = name,
-                        GameId = gameId,
+                        GameId = gameIdNorm,
                         Parts = parts,
                         Media = media,
                         SizeBytes = totalSize
                     });
                 }
             }
+            Debug.WriteLine($"[UL] Total entries: {entries.Count}, with size: {entries.Count(e => e.SizeBytes > 0)}");
             return entries.ToArray();
         }
 
@@ -189,14 +247,35 @@ namespace PS2Desktop.Services
         {
             uint crc = Crc32(gameName);
             string drivePath = drive.Length == 1 ? drive + ":\\" : drive + "\\";
+            string fileName0 = $"ul.{crc:X8}.{gameId}.00";
+            string partDir = FindDirectoryContainingFile(drivePath, fileName0) ?? drivePath;
 
             for (int i = 0; i < parts; i++)
             {
-                string partPath = Path.Combine(drivePath, $"ul.{crc:X8}.{gameId}.{i:D2}");
+                string partPath = Path.Combine(partDir, $"ul.{crc:X8}.{gameId}.{i:D2}");
                 if (File.Exists(partPath)) File.Delete(partPath);
             }
 
             RemoveFromUlCfg(drive, gameName, gameId);
+        }
+
+        public static void RenameGame(string drive, string oldName, string newName, string gameId, int parts)
+        {
+            uint oldCrc = Crc32(oldName);
+            uint newCrc = Crc32(newName);
+            string drivePath = drive.Length == 1 ? drive + ":\\" : drive + "\\";
+            string fileName0 = $"ul.{oldCrc:X8}.{gameId}.00";
+            string partDir = FindDirectoryContainingFile(drivePath, fileName0) ?? drivePath;
+
+            for (int i = 0; i < parts; i++)
+            {
+                string oldPath = Path.Combine(partDir, $"ul.{oldCrc:X8}.{gameId}.{i:D2}");
+                string newPath = Path.Combine(partDir, $"ul.{newCrc:X8}.{gameId}.{i:D2}");
+                if (File.Exists(oldPath) && oldPath != newPath)
+                    File.Move(oldPath, newPath);
+            }
+
+            UpdateNameInUlCfg(drive, oldName, newName, gameId);
         }
 
         private static void RemoveFromUlCfg(string drive, string gameName, string gameId)
@@ -226,6 +305,43 @@ namespace PS2Desktop.Services
 
                     if (name != gameName && image != "ul." + gameId)
                         bw.Write(entry);
+                }
+            }
+        }
+
+        private static void UpdateNameInUlCfg(string drive, string oldName, string newName, string gameId)
+        {
+            string cfgPath = GetCfgFilePath(drive);
+            if (!File.Exists(cfgPath)) return;
+
+            var allEntries = new System.Collections.Generic.List<byte[]>();
+            using (var fs = new FileStream(cfgPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var br = new BinaryReader(fs))
+            {
+                while (fs.Position + 64 <= fs.Length)
+                {
+                    byte[] entry = br.ReadBytes(64);
+                    if (entry.Length < 64) break;
+                    allEntries.Add(entry);
+                }
+            }
+
+            using (var fs = new FileStream(cfgPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var bw = new BinaryWriter(fs))
+            {
+                foreach (var entry in allEntries)
+                {
+                    string name = Encoding.ASCII.GetString(entry, 0, 32).TrimEnd('\0');
+                    string image = Encoding.ASCII.GetString(entry, 32, 15).TrimEnd('\0');
+
+                    if (name == oldName && image == "ul." + gameId)
+                    {
+                        byte[] nameSrc = Encoding.ASCII.GetBytes(newName);
+                        byte[] nameBytes = new byte[32];
+                        Array.Copy(nameSrc, nameBytes, Math.Min(nameSrc.Length, 32));
+                        Array.Copy(nameBytes, 0, entry, 0, 32);
+                    }
+                    bw.Write(entry);
                 }
             }
         }
@@ -401,10 +517,36 @@ namespace PS2Desktop.Services
 
         public static string FormatSize(long bytes)
         {
-            if (bytes >= GB) return $"{bytes / (double)GB:F2} GB";
+            if (bytes >= GB) return $"{bytes / (double)GB:F1} GB";
             if (bytes >= 1048576) return $"{bytes / 1048576.0:F1} MB";
             if (bytes >= 1024) return $"{bytes / 1024.0:F1} KB";
             return $"{bytes} B";
+        }
+
+        private static string FindDirectoryContainingFile(string rootDir, string fileName)
+        {
+            try
+            {
+                if (File.Exists(Path.Combine(rootDir, fileName))) return rootDir;
+                foreach (var sub in Directory.GetDirectories(rootDir))
+                {
+                    if (File.Exists(Path.Combine(sub, fileName))) return sub;
+                    foreach (var sub2 in Directory.GetDirectories(sub))
+                    {
+                        if (File.Exists(Path.Combine(sub2, fileName))) return sub2;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        public static string FindPartDirectory(string drive, string name, string gameId)
+        {
+            uint crc = Crc32(name);
+            string drivePath = drive.Length == 1 ? drive + ":\\" : drive + "\\";
+            string fileName0 = $"ul.{crc:X8}.{gameId}.00";
+            return FindDirectoryContainingFile(drivePath, fileName0);
         }
     }
 }

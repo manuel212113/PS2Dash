@@ -144,7 +144,7 @@ namespace PS2Desktop
         private void ResaltarBotonActivo(Button activo)
         {
             SoundService.PlayClick();
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnLibreria, BtnConfig, BtnAdmin, BtnPerfil };
 
             foreach (var btn in buttons)
             {
@@ -165,7 +165,7 @@ namespace PS2Desktop
         {
             App.EnsureDarkTheme();
             Sidebar.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#121212"));
-            foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil })
+            foreach (var btn in new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnLibreria, BtnConfig, BtnAdmin, BtnPerfil })
             {
                 btn.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888E9E"));
             }
@@ -256,6 +256,19 @@ namespace PS2Desktop
             ResaltarBotonActivo(BtnHerramientas);
         }
 
+        private void BtnLibreria_Click(object sender, RoutedEventArgs e)
+        {
+            if (!VerificarLogin()) { MostrarLogin(() => CargarLibreriaView()); return; }
+            CargarLibreriaView();
+        }
+
+        private void CargarLibreriaView()
+        {
+            DisposeCurrentContent();
+            NavigateTo(new LibreriaView());
+            ResaltarBotonActivo(BtnLibreria);
+        }
+
         private void BtnAdmin_Click(object sender, RoutedEventArgs e)
         {
             if (!VerificarLogin() || !_session.IsAdmin) return;
@@ -298,7 +311,7 @@ namespace PS2Desktop
             LogoutText.Visibility = Visibility.Collapsed;
             ProfileName.Text = "Usuario";
             AvatarImage.Source = null;
-            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnConfig, BtnAdmin, BtnPerfil };
+            var buttons = new[] { BtnHome, BtnTemas, BtnJuegos, BtnCrear, BtnHerramientas, BtnLibreria, BtnConfig, BtnAdmin, BtnPerfil };
             foreach (var btn in buttons)
             {
                 btn.Background = Brushes.Transparent;
