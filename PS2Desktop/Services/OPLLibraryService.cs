@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -327,15 +328,20 @@ namespace PS2Desktop.Services
             }
         }
 
-        public static async Task DownloadArtForGameAsync(string gameId, string artDir, IProgress<double>? progress = null, CancellationToken ct = default)
+        public static async Task<(int artCount, int screensDownloaded, int screensSkipped)> DownloadArtForGameAsync(
+            string gameId, string artDir, IProgress<double>? progress = null, CancellationToken ct = default)
         {
             if (string.IsNullOrEmpty(gameId) || string.IsNullOrEmpty(artDir))
-                return;
+                return (0, 0, 0);
 
             if (!Directory.Exists(artDir))
                 Directory.CreateDirectory(artDir);
 
             await OPLService.DownloadArtAsync(gameId, artDir, progress, ct);
+
+            var scr = await OPLService.DownloadScreenshotsForGameAsync(gameId, artDir, 15, null, ct);
+
+            return (3, scr.downloaded, scr.skipped);
         }
 
         public static async Task DownloadArtForAllAsync(IEnumerable<LibraryGame> games, string rootPath, IProgress<(string gameId, int current, int total, double percent)>? progress = null, CancellationToken ct = default)
@@ -364,6 +370,74 @@ namespace PS2Desktop.Services
                 }
                 catch { }
             }
+        }
+
+        public static async Task<(int downloaded, int skipped, int failed, string lastError)> DownloadLogosForAllAsync(
+            IEnumerable<LibraryGame> games, string rootPath,
+            IProgress<(string gameId, int current, int total, double percent)>? progress = null,
+            CancellationToken ct = default)
+        {
+            string artDir = Path.Combine(rootPath, "ART");
+            if (!Directory.Exists(artDir))
+                Directory.CreateDirectory(artDir);
+
+            var gameList = games.ToList();
+            int total = gameList.Count;
+            int downloaded = 0, skipped = 0, failed = 0;
+            string lastError = "";
+
+            using var semaphore = new SemaphoreSlim(6);
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < total; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                var game = gameList[i];
+                int idx = i + 1;
+
+                // Skip if logo already exists at any conventional name
+                string[] variants = { ".png", ".PNG", ".jpg", ".JPG", ".jpeg", ".JPEG" };
+                bool alreadyHas = variants.Any(ext =>
+                    File.Exists(Path.Combine(artDir, $"{game.GameId}_LGO{ext}")));
+
+                if (alreadyHas)
+                {
+                    skipped++;
+                    progress?.Report((game.GameId, idx, total, (double)idx / total * 100));
+                    continue;
+                }
+
+                await semaphore.WaitAsync(ct);
+                tasks.Add(Task.Run(async () =>
+                {
+                    try
+                    {
+                        string url = $"https://raw.githubusercontent.com/Luden02/psx-ps2-opl-art-database/refs/heads/main/PS2/{game.GameId}/{game.GameId}_LGO.png";
+                        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                        using var client = new HttpClient();
+                        client.Timeout = TimeSpan.FromSeconds(15);
+
+                        var data = await client.GetByteArrayAsync(url, cts.Token);
+                        await File.WriteAllBytesAsync(
+                            Path.Combine(artDir, $"{game.GameId}_LGO.png"), data, ct);
+
+                        System.Threading.Interlocked.Increment(ref downloaded);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Threading.Interlocked.Increment(ref failed);
+                        System.Threading.Interlocked.Exchange(ref lastError, ex.Message);
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                        progress?.Report((game.GameId, idx, total, (double)idx / total * 100));
+                    }
+                }, ct));
+            }
+
+            try { await Task.WhenAll(tasks); } catch { }
+            return (downloaded, skipped, failed, lastError);
         }
 
         public static List<string> DetectInvalidFiles(string rootPath)

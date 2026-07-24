@@ -350,6 +350,8 @@
                             Margin="8,0,0,0" Click="BtnLibScan_Click" x:Name="BtnLibScan"/>
                     <Button Content="Desmontar" Style="{StaticResource DangerButtonStyle}" Height="34" Width="100" FontSize="12"
                             Margin="8,0,0,0" Click="BtnLibUnmount_Click"/>
+                    <Button Content="Descargar logos" Style="{StaticResource AccentButtonStyle}" Height="34" Width="120" FontSize="12"
+                            Margin="8,0,0,0" Click="BtnLibDownloadAllLogos_Click"/>
                     <TextBlock x:Name="TxtLibGameCount" Text="0 juegos" Foreground="#8B949E" FontSize="13"
                                VerticalAlignment="Center" Margin="16,0,0,0"/>
                 </StackPanel>
@@ -598,7 +600,7 @@
                         <!-- Row 2: Actions -->
                         <Border Grid.Row="2" Margin="0,16,0,0" Padding="12" Background="#2D333BAA" CornerRadius="6" BorderBrush="#373E47" BorderThickness="1">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="Descargar ART" Style="{StaticResource AccentButtonStyle}" Height="34" Width="120" FontSize="12"
+                                <Button x:Name="BtnLibDownloadArt" Content="Descargar ART" Style="{StaticResource AccentButtonStyle}" Height="34" Width="120" FontSize="12"
                                         Click="BtnLibDownloadArt_Click"/>
                                 <Button Content="Eliminar" Style="{StaticResource DangerButtonStyle}" Height="34" Width="100" FontSize="12" Margin="8,0,0,0"
                                         Click="BtnLibDeleteGame_Click"/>

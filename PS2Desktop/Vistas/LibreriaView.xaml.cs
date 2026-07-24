@@ -560,19 +560,71 @@ namespace PS2Desktop.Vistas
             }
         }
 
+        private async void BtnLibDownloadAllLogos_Click(object sender, RoutedEventArgs e)
+        {
+            if (_libAllGames.Count == 0)
+            {
+                MessageBox.Show("Primero escanea la librería.", "Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var result = MessageBox.Show(
+                $"Descargar logos (LGO) para los juegos sin logo?\nEsto puede tardar varios minutos.",
+                "Descargar logos", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<(string gameId, int current, int total, double percent)>(p =>
+            {
+                TxtLibScanStatus.Text = $"Descargando logos {p.current}/{p.total} — {p.gameId}";
+                double maxWidth = 400;
+                LibScanProgressBar.Width = maxWidth * p.percent / 100;
+            });
+
+            LibScanProgress.Visibility = Visibility.Visible;
+            try
+            {
+                var stats = await OPLLibraryService.DownloadLogosForAllAsync(
+                    _libAllGames, _libRootPath, progress, cts.Token);
+
+                ToastService.Instance?.ShowSuccess(
+                    $"Logos: {stats.downloaded} descargados, {stats.skipped} ya existían, {stats.failed} sin logo");
+                await ScanLibraryAsync();
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance?.ShowError($"Error: {ex.Message}");
+            }
+            finally
+            {
+                LibScanProgress.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private async void BtnLibDownloadArt_Click(object sender, RoutedEventArgs e)
         {
             if (_libSelectedGame == null) return;
             try
             {
                 string artDir = Path.Combine(_libRootPath, "ART");
-                await OPLLibraryService.DownloadArtForGameAsync(_libSelectedGame.GameId, artDir);
-                ToastService.Instance?.ShowSuccess($"Arte descargado para {_libSelectedGame.GameId}");
+                BtnLibDownloadArt.IsEnabled = false;
+                BtnLibDownloadArt.Content = "Descargando...";
+
+                var (artCount, screensDl, screensSkipped) = await OPLLibraryService.DownloadArtForGameAsync(
+                    _libSelectedGame.GameId, artDir);
+
+                ToastService.Instance?.ShowSuccess(
+                    $"Arte guardado para {_libSelectedGame.GameId}. Screenshots: {screensDl} descargados, {screensSkipped} ya existían");
                 await ScanLibraryAsync();
             }
             catch (Exception ex)
             {
                 ToastService.Instance?.ShowError($"Error: {ex.Message}");
+            }
+            finally
+            {
+                BtnLibDownloadArt.Content = "Descargar ART";
+                BtnLibDownloadArt.IsEnabled = true;
             }
         }
 

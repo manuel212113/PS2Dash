@@ -515,6 +515,69 @@ namespace PS2Desktop.Services
             }
         }
 
+        public static async Task<(int downloaded, int skipped)> DownloadScreenshotsForGameAsync(
+            string gameId, string outputDir, int maxIndex = 15,
+            IProgress<int>? progress = null,
+            System.Threading.CancellationToken ct = default)
+        {
+            if (string.IsNullOrEmpty(gameId) || string.IsNullOrEmpty(outputDir))
+                return (0, 0);
+
+            Directory.CreateDirectory(outputDir);
+
+            int downloaded = 0;
+            int skipped = 0;
+            int consecutiveMisses = 0;
+
+            for (int i = 0; i <= maxIndex; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                string fileName = $"{gameId}_SCR_{i:D2}.png";
+                string filePath = Path.Combine(outputDir, fileName);
+
+                if (File.Exists(filePath))
+                {
+                    skipped++;
+                    progress?.Report(i);
+                    continue;
+                }
+
+                string url = $"https://raw.githubusercontent.com/Luden02/psx-ps2-opl-art-database/refs/heads/main/PS2/{gameId}/{fileName}";
+
+                try
+                {
+                    var cts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    cts.CancelAfter(TimeSpan.FromSeconds(10));
+
+                    var data = await _http.GetByteArrayAsync(url, cts.Token);
+                    await File.WriteAllBytesAsync(filePath, data, ct);
+
+                    downloaded++;
+                    consecutiveMisses = 0;
+                }
+                catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    consecutiveMisses++;
+                    if (consecutiveMisses >= 2) break;
+                }
+                catch (System.Threading.Tasks.TaskCanceledException)
+                {
+                    consecutiveMisses++;
+                    if (consecutiveMisses >= 2) break;
+                }
+                catch
+                {
+                    consecutiveMisses++;
+                    if (consecutiveMisses >= 2) break;
+                }
+
+                progress?.Report(i);
+            }
+
+            return (downloaded, skipped);
+        }
+
         public static string FormatSize(long bytes)
         {
             if (bytes >= GB) return $"{bytes / (double)GB:F1} GB";
